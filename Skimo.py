@@ -2,147 +2,148 @@ import streamlit as st
 import pandas as pd
 import time
 
-# 1. 페이지 설정
-st.set_page_config(page_title="ISMF KOREA Official", page_icon="🏔️", layout="wide")
+# 1. 페이지 설정 및 기본 테마 정의
+st.set_page_config(page_title="Ski Mountaineering Portal", page_icon="🏔️", layout="wide")
 
-# 2. 메인 타이틀
-st.title("🏔️ ISMF KOREA CHAMPIONSHIP")
-st.subheader("국제산악스키연맹 공인 대한민국 산악스키 선수권 대회 및 참가 관리 시스템")
+# 2. 다국어 지원 (외국인 방문자 고려)
+if "lang" not in st.session_state:
+    st.session_state.lang = "KO"
+
+col_title, col_lang = st.columns([8, 2])
+with col_lang:
+    lang_choice = st.selectbox("🌐 Language", ["한국어 (KO)", "English (EN)"])
+    st.session_state.lang = "KO" if "한국어" in lang_choice else "EN"
+
+# 언어 팩 정의
+texts = {
+    "KO": {
+        "title": "🏔️ 스키등산(산악스키) 대회정보 통합 포털",
+        "subtitle": "행사 기획, 참가자, 봉사자, 관리자를 위한 통합 솔루션 시스템",
+        "menu": ["대회 홈 & 문화행사 정보", "선수 참가 신청", "자원봉사 지원", "실시간 리더보드 (LIVE)", "🔐 관리자 모드"],
+        "home_title": "📢 대회 및 연계 행사 안내",
+        "ad_title": "🤝 공식 후원사 및 광고 파트너",
+        "stats_title": "📊 대회 총괄 관리 대시보드 (기획자/관리자용)",
+        "v_total": "총 지원 봉사자", "a_total": "총 등록 선수", "fee_total": "누적 참가비 매출"
+    },
+    "EN": {
+        "title": "🏔️ Ski Mountaineering Tournament Portal",
+        "subtitle": "Integrated Solution for Organizers, Athletes, Volunteers, and Admins",
+        "menu": ["Home & Cultural Events", "Athlete Registration", "Volunteer Application", "Live Leaderboard", "🔐 Admin Mode"],
+        "home_title": "📢 Tournament & Event Information",
+        "ad_title": "🤝 Official Sponsors & Advertisers",
+        "stats_title": "📊 Tournament Management Dashboard (For Organizers)",
+        "v_total": "Total Volunteers", "a_total": "Total Athletes", "fee_total": "Total Revenue"
+    }
+}
+
+T = texts[st.session_state.lang]
+
+# 헤더 출력
+with col_title:
+    st.title(T["title"])
+    st.caption(T["subtitle"])
 st.markdown("---")
 
-# 3. 사이드바 메뉴 확장
-menu = st.sidebar.selectbox(
-    "메뉴 선택 (Menu)", 
-    ["대회 홈 & 공식 요강", "대회 참가 신청 (Registration)", "실시간 리더보드 (LIVE)", "자원봉사 지원"]
-)
+# 3. 통합 포털 메뉴 구조 구성
+menu = st.sidebar.radio("🧭 Portal Menu", T["menu"])
 
-# --- 1. 대회 홈 & 공식 요강 섹션 ---
-if menu == "대회 홈 & 공식 요강":
-    st.header("📢 대회 공식 안내 (Notice)")
-    
-    # 가상의 공식 안내서 (PDF 다운로드 기능 모사)
-    st.markdown("""
-    ### 📅 2026 대회 세부 일정 및 내용
-    * **대회 일시:** 2026년 2월 13일(금) ~ 2월 15일(일) [3일간]
-    * **대회 장소:** 대한민국 강원도 평창 설산 일대 (ISMF 공인 코스)
-    * **경기 종목:** * **1일차:** 스프린트 (Sprint) - 폭발적인 스피드와 기술 요구
-        * **2일차:** 인디비주얼 (Individual) - 설산을 개척하는 전통 종목
-        * **3일차:** 버티컬 (Vertical) - 오직 업힐로만 승부하는 기록 경기
-    * **참가 자격:** ISMF 등록 선수 및 동호인 (부문별 시상 분리)
-    """)
-    
-    # 실제 운영 시 아버님이 작성하신 PDF 파일을 연결할 수 있는 다운로드 버튼
-    mock_pdf = b"ISMF Korea Championship Official Regulation Guide PDF"
-    st.download_button(
-        label="📄 대회 공식 요강 가이드북 다운로드 (English/Korean)",
-        data=mock_pdf,
-        file_name="ISMF_Korea_2026_Guide.pdf",
-        mime="application/pdf"
-    )
-    
-    st.image("https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=800&q=80", caption="ISMF 규격 코스를 질주하는 선수들")
+# 가상 데이터베이스 (대규모 접속 및 유지보수성을 고려한 데이터 모델 모사)
+if "athletes_db" not in st.session_state:
+    st.session_state.athletes_db = [
+        {"ID": 1, "Name": "홍길동", "Nation": "KOREA", "Event": "Sprint", "Fee": 30000},
+        {"ID": 2, "Name": "Alex Smith", "Nation": "USA", "Event": "Individual", "Fee": 110000},
+        {"ID": 3, "Name": "김철수", "Nation": "KOREA", "Event": "Vertical", "Fee": 80000},
+    ]
+if "volunteers_db" not in st.session_state:
+    st.session_state.volunteers_db = [
+        {"이름": "박영민", "연락처": "010-1234-5678", "전공": "컴퓨터공학"}
+    ]
 
-# --- 2. 대회 참가 신청 & 결제 섹션 (신규 추가!) ---
-elif menu == "대회 참가 신청 (Registration)":
-    st.header("📝 선수 참가 신청 및 패키지 예약")
-    st.write("국제 규정에 따른 선수 등록 및 대회 기간 중 숙박·식사 패키지를 한 번에 선택할 수 있습니다.")
+# --- [메뉴 1] 대회 홈 & 연계 문화행사 정보 ---
+if menu in ["대회 홈 & 문화행사 정보", "Home & Cultural Events"]:
+    st.header(T["home_title"])
     
-    with st.form("registration_form"):
-        st.subheader("1. 개인 인적 사항")
-        col1, col2 = st.columns(2)
-        with col1:
-            name = st.text_input("선수명 (Full Name)", placeholder="홍길동 / Hong Gil Dong")
-            birth = st.date_input("생년월일 (Birth Date)")
-            gender = st.radio("성별 (Gender)", ["남성 (Male)", "여성 (Female)"])
-        with col2:
-            phone = st.text_input("연락처 (Phone)", placeholder="010-XXXX-XXXX")
-            email = st.text_input("이메일 (Email)")
-            team = st.text_input("소속 팀/국가 (Team / Nation)", placeholder="예: 대한산악스키협회 / KOREA")
-            
-        st.markdown("---")
-        st.subheader("2. 경기 종목 선택")
-        category = st.selectbox("참가 부문", ["엘리트 성인부 (Elite)", "주니어부 (Junior)", "마스터즈 동호인부 (Masters)"])
-        events = st.multiselect("참가 종목 (중복 선택 가능)", ["스프린트 (Sprint)", "인디비주얼 (Individual)", "버티컬 (Vertical)"])
+    col_info, col_poster = st.columns([6, 4])
+    with col_info:
+        st.markdown(f"""
+        ### 📅 2026 ISMF 대한민국 산악스키 선수권 대회
+        * **개최지:** 강원도 평창 설산 일대 (ISMF 국제 공인 코스)
+        * **규모:** 국내외 선수 및 동호인 **3,000명 ~ 5,000명 참여 예상** 
         
-        st.markdown("---")
-        st.subheader("3. 숙박 및 식사 패키지 선택 (선택 사항)")
-        accommodation = st.selectbox(
-            "대회 공식 지정 숙소 예약",
-            ["선택 안 함 (개인 해결)", "공식 콘도 2인 1실 (1박당 80,000원)", "공식 콘도 4인 1실 (1박당 40,000원)"]
-        )
-        stay_days = st.number_input("숙박 일수 (Nights)", min_value=0, max_value=4, value=0)
-        meal_ticket = st.checkbox("대회 공식 만찬 및 식권 패키지 신청 (3일간 전 일정 식사 - 50,000원)")
-        
-        st.markdown("---")
-        st.subheader("4. ISMF 규정에 따른 서류 제출 및 면책 동의")
-        st.warning("⚠️ 산악스키는 익스트림 스포츠로서 위험 요소를 내포하고 있으므로 공식 면책동의서 제출 및 선수 안전 보험 가입 증서 업로드가 필수입니다.")
-        
-        insurance_file = st.file_defect = st.file_uploader("스포츠 상해 보험 가입 증서 업로드 (PDF/JPG)")
-        agree = st.checkbox("본인은 대회 참가 중 발생하는 부상 및 사고에 대해 주최 측에 책임을 묻지 않으며, ISMF 반도핑 규정을 준수할 것을 동의합니다.")
-        
-        st.markdown("---")
-        st.subheader("5. 참가비 및 결제 금액 확인")
-        
-        # 가상 참가비 계산 시스템
-        entry_fee = len(events) * 30000  # 종목당 3만원
-        room_fee = 80000 if "2인" in accommodation else (40000 if "4인" in accommodation else 0)
-        total_accommodation_fee = room_fee * stay_days
-        meal_fee = 50000 if meal_ticket else 0
-        total_fee = entry_fee + total_accommodation_fee + meal_fee
-        
-        st.metric(label="총 결제 금액 (Total Amount)", value=f"{total_fee:,} 원")
-        
-        # 결제 수단 선택
-        pay_method = st.radio("결제 수단 선택", ["신용카드 (Credit Card)", "가상계좌 무통장 입금", "해외 선수 전용 페이팔 (PayPal)"])
-        
-        # 제출 버튼
-        submitted = st.form_submit_button("참가 신청 및 결제하기 (Submit & Pay)")
-        
-        if submitted:
-            if not name or not email:
-                st.error("❌ 필수 인적 사항(이름, 이메일)을 입력해 주세요.")
-            elif not events:
-                st.error("❌ 최소 하나 이상의 경기 종목을 선택해 주세요.")
-            elif not agree:
-                st.error("❌ 면책 동의서에 동의하셔야 참가 신청이 가능합니다.")
-            else:
-                with st.spinner("결제 요청 및 참가 승인 처리 중..."):
-                    time.sleep(2)
-                st.success(f"🎉 {name} 선수님, 참가 신청과 결제가 완료되었습니다!")
-                st.balloons()
-                st.info(f"등록 확인 메일이 {email}로 발송되었습니다. 배번호는 추후 심판진 배정 후 공지됩니다.")
+        ### 🎭 연계 문화/레저 행사 (통합 솔루션)
+        * **산악 아웃도어 박람회:** 대회 기간 내 베이스캠프 전시장 운영 (장비 시연 및 체험)
+        * **설산 문화 공연:** 개막식 당일 동계 스포츠 성공 기원 미디어아트 및 문화 공연 개최
+        * **외국인 참가자 케어 서비스:** 인천공항-정선/평창 간 공식 셔틀버스 및 영문 가이드 지원
+        """)
+    with col_poster:
+        st.image("https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=800&q=80", caption="ISMF Skimo World Cup Event")
 
-# --- 3. 실시간 리더보드 섹션 ---
-elif menu == "실시간 리더보드 (LIVE)":
-    st.header("⏱️ 실시간 경기 현황 (LIVE)")
-    st.write("각 체크포인트(CP)의 필드 심판들이 앱으로 입력한 데이터가 실시간으로 반영됩니다.")
-    
-    data = {
-        "순위": [1, 2, 3],
-        "배번호": [104, 102, 115],
-        "선수명": ["홍길동", "김철수", "이영희"],
-        "소속": ["대한산악스키협회", "서울스모클럽", "한국체육대학교"],
-        "최근 통과 구간": ["CP3 (정상)", "CP3 (정상)", "CP2 (업힐)"],
-        "기록 (Time)": ["01:12:45", "01:14:20", "01:18:10"],
-        "패널티": ["-", "-", "+1:00 (장비 규정 위반)"]
-    }
-    df = pd.DataFrame(data)
-    st.dataframe(df, use_container_width=True)
-    
-    if st.button("🔄 기록 새로고침"):
-        with st.spinner("최신 경기 기록을 불러오는 중..."):
-            time.sleep(0.5)
-        st.rerun()
+    # [수정 요구 반영] 수천 명이 모였을 때 붙이는 광고/스폰서 구역 구체화
+    st.markdown("---")
+    st.subheader(T["ad_title"])
+    col_ad1, col_ad2, col_ad3 = st.columns(3)
+    with col_ad1:
+        st.info("⛷️ **Premium Sponsor A**\n\n글로벌 아웃도어 브랜드 광고 구역")
+    with col_ad2:
+        st.info("🏨 **Official Lodging B**\n\n대회 공식 지정 리조트 및 숙박 연계 광고")
+    with col_ad3:
+        st.info("🥤 **Energy Drink C**\n\n스포츠 음료 공식 후원사 브랜드 배너")
 
-# --- 4. 자원봉사 신청 섹션 ---
-elif menu == "자원봉사 지원":
-    st.header("🤝 자원봉사자(서포터즈) 모집")
-    st.write("대회의 원활한 운영과 디지털 심판 시스템을 지원해 줄 젊은 열정을 기다립니다.")
+# --- [메뉴 2] 선수 참가 신청 ---
+elif menu in ["선수 참가 신청", "Athlete Registration"]:
+    st.header("📝 Athlete Registration / 선수 참가 신청")
+    with st.form("reg_form"):
+        u_name = st.text_input("Name / 이름")
+        u_nation = st.text_input("Nationality / 국적", value="KOREA")
+        u_event = st.selectbox("Event / 종목", ["Sprint", "Individual", "Vertical"])
+        u_package = st.checkbox("Apply for Accommodation + Meal Package (숙박 및 식사 패키지 포함 - 80,000원 추가)")
+        
+        calc_fee = 30000 + (80000 if u_package else 0)
+        st.metric("Total Fee / 결제 예정 금액", f"{calc_fee:,} KRW")
+        
+        submit = st.form_submit_button("Submit & Pay / 참가 신청 및 결제")
+        if submit and u_name:
+            st.session_state.athletes_db.append({"ID": len(st.session_state.athletes_db)+1, "Name": u_name, "Nation": u_nation, "Event": u_event, "Fee": calc_fee})
+            st.success(f"🎉 Registration Complete! Welcome, {u_name}!")
+            st.balloons()
+
+# --- [메뉴 3] 자원봉사 지원 ---
+elif menu in ["자원봉사 지원", "Volunteer Application"]:
+    st.header("🤝 Volunteer Application / 자원봉사 서포터즈 지원")
+    with st.form("vol_form"):
+        v_name = st.text_input("이름 (Name)")
+        v_phone = st.text_input("연락처 (Phone)")
+        v_spec = st.text_input("특기 및 전공 (예: 영어 통역 가능, 컴퓨터공학 등)")
+        v_submit = st.form_submit_button("Apply / 지원하기")
+        if v_submit and v_name:
+            st.session_state.volunteers_db.append({"이름": v_name, "연락처": v_phone, "전공": v_spec})
+            st.success(f"❤️ {v_name}님, 대회 자원봉사 지원이 완료되었습니다!")
+
+# --- [메뉴 4] 실시간 리더보드 (LIVE) ---
+elif menu in ["실시간 리더보드 (LIVE)", "Live Leaderboard"]:
+    st.header("⏱️ Live Race Leaderboard")
+    st.caption("필드 심판용 앱과 연동되어 실시간으로 업데이트되는 경기 순위입니다.")
     
-    with st.form("volunteer_form"):
-        v_name = st.text_input("이름")
-        v_phone = st.text_input("연락처")
-        v_major = st.text_input("소속 / 전공")
-        v_submitted = st.form_submit_button("지원하기")
-        if v_submitted:
-            st.success(f"{v_name}님의 지원이 정상적으로 접수되었습니다. 대회를 빛내주셔서 감사합니다!")
+    live_data = pd.DataFrame(st.session_state.athletes_db)
+    st.dataframe(live_data, use_container_width=True)
+
+# --- [메뉴 5] 🔐 관리자 모드 (신규 추가!) ---
+elif menu in ["🔐 관리자 모드", "🔐 Admin Mode"]:
+    st.header(T["stats_title"])
+    st.write("주최측(아버님 및 사무국)이 대회의 전반적인 규모와 재정, 인력을 한눈에 파악하는 화면입니다.")
+    
+    # 총계 연산 및 시각화 (직관성/편리성 확보)
+    total_athletes = len(st.session_state.athletes_db)
+    total_vols = len(st.session_state.volunteers_db)
+    total_revenue = sum([item["Fee"] for item in st.session_state.athletes_db])
+    
+    m1, m2, m3 = st.columns(3)
+    m1.metric(T["a_total"], f"{total_athletes} 명")
+    m2.metric(T["v_total"], f"{total_vols} 명")
+    m3.metric(T["fee_total"], f"{total_revenue:,} 원")
+    
+    st.subheader("📋 실시간 등록 선수 명단 관리")
+    st.dataframe(pd.DataFrame(st.session_state.athletes_db), use_container_width=True)
+    
+    st.subheader("📋 현장 자원봉사자 배치 명단")
+    st.dataframe(pd.DataFrame(st.session_state.volunteers_db), use_container_width=True)
