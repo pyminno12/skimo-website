@@ -4,72 +4,9 @@ from datetime import datetime
 import time
 
 # ==========================================
-# 1. 페이지 설정 및 글로벌 CSS 스타일 커스텀
+# 1. 페이지 기본 설정
 # ==========================================
 st.set_page_config(page_title="ISMF Korea Global Portal", page_icon="🏔️", layout="wide")
-
-# ISMF 공식 사이트 느낌의 상단 바와 폰트 스타일을 강제로 주입하는 CSS
-st.markdown("""
-    <style>
-    /* 기본 스트림릿 패딩 제거하여 풀 와이드 구현 */
-    .block-container {
-        padding-top: 0rem;
-        padding-bottom: 3rem;
-        padding-left: 0rem;
-        padding-right: 0rem;
-    }
-    
-    /* 상단 네비게이션 바 스타일 */
-    .top-nav {
-        background-color: #0f2027;
-        padding: 15px 50px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        color: white;
-        font-weight: bold;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    .nav-logo {
-        font-size: 24px;
-        letter-spacing: 1px;
-        color: #ffffff;
-    }
-    
-    /* 웅장한 설산 히어로 배너 세팅 */
-    .hero-section {
-        background: linear-gradient(rgba(15, 32, 39, 0.5), rgba(44, 83, 100, 0.3)), 
-                    url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80') no-repeat center center;
-        background-size: cover;
-        height: 450px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        text-align: center;
-        padding: 20px;
-    }
-    .hero-title {
-        font-size: 45px;
-        font-weight: 700;
-        text-shadow: 3px 3px 6px rgba(0,0,0,0.6);
-        margin-bottom: 10px;
-    }
-    .hero-subtitle {
-        font-size: 20px;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        color: #00c6ff;
-    }
-    
-    /* 컨텐츠가 들어갈 중앙 정렬 박스 */
-    .content-box {
-        max-width: 1300px;
-        margin: 0 auto;
-        padding: 40px 20px;
-    }
-    </style>
-""", unsafe_allow_html=True)
 
 # ==========================================
 # 2. 다국어 데이터 배열 (6개국어 대응)
@@ -124,18 +61,73 @@ LOCALIZED_TEXT = {
     }
 }
 
-# 🌐 언어 선택 및 네비게이션 제어는 사이드바 상단에서 깔끔하게 처리
 selected_lang_name = st.sidebar.selectbox("🌐 Select Language", list(LANG_DICT.keys()))
 current_lang = LANG_DICT[selected_lang_name]
 T = LOCALIZED_TEXT[current_lang]
 
-# --- [계획표 2단계 반영] 상단 고정형 메뉴 바 UI 아키텍처 ---
+# --- 네비게이션 메뉴 선택 (한국어 기준으로 인덱스 매칭을 위해 리스트에서 찾기) ---
 menu = st.sidebar.radio("🧭 Navigation Menu", T["menu"])
+menu_index = T["menu"].index(menu)
 
 # ==========================================
-# 3. 메인 상단 비주얼 영역 (ISMF 스타일 적용)
+# 3. [신규 추가] 메뉴별 동적 배경화면 매핑 배열
 # ==========================================
-# 텍스트가 배경을 가리지 않고 웅장하게 녹아들도록 HTML 컴포넌트로 결합
+# 고해상도 아웃도어 및 산악스키 관련 Unsplash 이미지 URL
+BG_IMAGES = [
+    "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80",  # 0. 대회 홈 (웅장한 설산)
+    "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=1800&q=80",  # 1. 선수 참가 신청 (스키 타는 선수들)
+    "https://images.unsplash.com/photo-1614531341773-3bef8ca0da3b?auto=format&fit=crop&w=1800&q=80",  # 2. 실시간 리더보드 (역동적인 레이스 트랙)
+    "https://images.unsplash.com/photo-1482867996988-2faec3cbb4f9?auto=format&fit=crop&w=1800&q=80"   # 3. 심판/관리자 패널 (차분한 겨울 숲과 산)
+]
+selected_bg = BG_IMAGES[menu_index]
+
+# ==========================================
+# 4. 글로벌 CSS 스타일 커스텀 (동적 배경 반영)
+# ==========================================
+st.markdown(f"""
+    <style>
+    .block-container {{
+        padding-top: 0rem;
+        padding-bottom: 3rem;
+        padding-left: 0rem;
+        padding-right: 0rem;
+    }}
+    
+    /* 선택된 메뉴의 배경 이미지(selected_bg)가 실시간으로 주입되는 영역 */
+    .hero-section {{
+        background: linear-gradient(rgba(15, 32, 39, 0.65), rgba(44, 83, 100, 0.45)), 
+                    url('{selected_bg}') no-repeat center center;
+        background-size: cover;
+        height: 450px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        text-align: center;
+        padding: 20px;
+        transition: background 0.5s ease-in-out; /* 배경이 부드럽게 바뀌는 애니메이션 효과 */
+    }}
+    .hero-title {{
+        font-size: 45px;
+        font-weight: 700;
+        text-shadow: 3px 3px 6px rgba(0,0,0,0.6);
+        margin-bottom: 10px;
+    }}
+    .hero-subtitle {{
+        font-size: 20px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        color: #00c6ff;
+    }}
+    .content-box {{
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }}
+    </style>
+""", unsafe_allow_html=True)
+
+# 메인 상단 비주얼 영역 출력
 st.markdown(f"""
     <div class="hero-section">
         <div class="hero-title">{T["title"]}</div>
@@ -151,14 +143,11 @@ if "athletes" not in st.session_state:
         {"BIB": "103", "Name": "Chloe", "Team": "FRANCE", "Status": "RACING", "CP1": "10:16:55", "CP2": "10:49:30", "Penalty": "None"},
     ]
 
-# 모든 컨텐츠는 content-box 클래스로 감싸서 균형 잡힌 가독성 제공
 st.markdown('<div class="content-box">', unsafe_allow_html=True)
 
-# --- [모듈 1] 대회 홈 화면 (가독성 100% 보장 레이아웃) ---
-if menu == T["menu"][0]:
+# --- [모듈 1] 대회 홈 화면 ---
+if menu_index == 0:
     st.header("🏁 Upcoming Events & Overview")
-    
-    # 3단 분할 레이아웃으로 안내글, 유튜브, 올림픽 사진을 가로로 깔끔하게 배치!
     col_text, col_video, col_photo = st.columns([4, 4, 4])
     
     with col_text:
@@ -178,11 +167,9 @@ if menu == T["menu"][0]:
 
     with col_photo:
         st.markdown(f"### {T['photo']}")
-        # 고해상도 리얼 올림픽 산악스키 주행 컷 적용
         st.image("https://images.unsplash.com/photo-1614531341773-3bef8ca0da3b?auto=format&fit=crop&w=600&q=80", 
                  caption="Olympic Ski Mountaineering Athlete in Action")
 
-    # 하단 파트너 배너 구역
     st.markdown("---")
     st.subheader("🤝 Global Partners & Sponsors")
     c_ad1, c_ad2, c_ad3 = st.columns(3)
@@ -190,9 +177,9 @@ if menu == T["menu"][0]:
     c_ad2.info("🏨 **Official Lodging**\nResort & Hotel Partner")
     c_ad3.info("🥤 **Official Beverage**\nEnergy Drink Sponsor")
 
-# --- [모듈 2] 선수 참가 신청 및 행정 결제 ---
-elif menu == T["menu"][1]:
-    st.header(T["reg_title"] if "reg_title" in T else T["menu"][1])
+# --- [모듈 2] 선수 참가 신청 ---
+elif menu_index == 1:
+    st.header(T["menu"][1])
     with st.form("global_reg_form"):
         p_name = st.text_input("Name")
         p_nation = st.text_input("Nationality")
@@ -205,13 +192,13 @@ elif menu == T["menu"][1]:
             st.success("Registration Successful!")
 
 # --- [모듈 3] 실시간 리더보드 ---
-elif menu == T["menu"][2]:
+elif menu_index == 2:
     st.header(T["menu"][2])
     df = pd.DataFrame(st.session_state.athletes)
     st.dataframe(df.set_index("BIB"), use_container_width=True)
 
-# --- [모듈 4] 🔐 심판 및 관리자 전용 제어 시스템 ---
-elif menu == T["menu"][3]:
+# --- [모듈 4] 🔐 심판 및 관리자 패널 ---
+elif menu_index == 3:
     st.header(T["menu"][3])
     athlete_names = [f"#{a['BIB']} - {a['Name']}" for a in st.session_state.athletes]
     target_athlete = st.selectbox("🎯 Target Athlete", athlete_names)
