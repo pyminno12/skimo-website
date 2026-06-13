@@ -4,192 +4,230 @@ from datetime import datetime
 import time
 
 # ==========================================
-# 다국어 데이터 확장 모듈 (Global Language Pack)
+# 1. 페이지 설정 및 글로벌 CSS 스타일 커스텀
 # ==========================================
-st.set_page_config(page_title="ISMF Korea Global System", page_icon="🏔️", layout="wide")
+st.set_page_config(page_title="ISMF Korea Global Portal", page_icon="🏔️", layout="wide")
 
+# ISMF 공식 사이트 느낌의 상단 바와 폰트 스타일을 강제로 주입하는 CSS
+st.markdown("""
+    <style>
+    /* 기본 스트림릿 패딩 제거하여 풀 와이드 구현 */
+    .block-container {
+        padding-top: 0rem;
+        padding-bottom: 3rem;
+        padding-left: 0rem;
+        padding-right: 0rem;
+    }
+    
+    /* 상단 네비게이션 바 스타일 */
+    .top-nav {
+        background-color: #0f2027;
+        padding: 15px 50px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: white;
+        font-weight: bold;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .nav-logo {
+        font-size: 24px;
+        letter-spacing: 1px;
+        color: #ffffff;
+    }
+    
+    /* 웅장한 설산 히어로 배너 세팅 */
+    .hero-section {
+        background: linear-gradient(rgba(15, 32, 39, 0.5), rgba(44, 83, 100, 0.3)), 
+                    url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80') no-repeat center center;
+        background-size: cover;
+        height: 450px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        text-align: center;
+        padding: 20px;
+    }
+    .hero-title {
+        font-size: 45px;
+        font-weight: 700;
+        text-shadow: 3px 3px 6px rgba(0,0,0,0.6);
+        margin-bottom: 10px;
+    }
+    .hero-subtitle {
+        font-size: 20px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        color: #00c6ff;
+    }
+    
+    /* 컨텐츠가 들어갈 중앙 정렬 박스 */
+    .content-box {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# ==========================================
+# 2. 다국어 데이터 배열 (6개국어 대응)
+# ==========================================
 LANG_DICT = {
-    "한국어 (KO)": "KO",
-    "English (EN)": "EN",
-    "Français (FR)": "FR",       
-    "Italiano (IT)": "IT",       
-    "简体中文 (ZH)": "ZH",       
-    "日本語 (JA)": "JA"          
+    "한국어 (KO)": "KO", "English (EN)": "EN", "Français (FR)": "FR",       
+    "Italiano (IT)": "IT", "简体中文 (ZH)": "ZH", "日本語 (JA)": "JA"          
 }
 
 LOCALIZED_TEXT = {
     "KO": {
-        "title": "🏔️ 스키등산(산악스키) 대회 통합 글로벌 포털",
-        "subtitle": "올림픽 정식 종목 공인 - 전 세계인을 위한 시스템",
-        "menu": ["대회 홈", "선수 참가 신청", "실시간 리더보드 (LIVE)", "🔐 심판/관리자 전용 패널"],
-        "notice": "🏁 경기 요강 및 문화행사 안내",
-        "desc": "본 대회는 ISMF 규정을 준수하며, 필드 심판의 모바일 웹앱을 통해 전 세계에 실시간으로 판정 및 페널티가 집계됩니다.",
-        "video_title": "📺 산악스키 경기 룰 & 소개 영상",
-        "photo_title": "📸 올림픽 산악스키 경기 현장",
-        "reg_title": "📝 선수 참가 신청 및 패키지 결제",
-        "name": "선수명", "nation": "국적/소속", "event": "참가 종목", "pay": "💳 안전 결제 및 참가 확정",
-        "live_title": "⏱️ 실시간 경기 리더보드 (전 세계 생중계)",
-        "judge_title": "🔐 필드 심판 전용 실시간 제어 패널"
+        "title": "ISMF KOREA CHAMPIONSHIP",
+        "subtitle": "올림픽 정식 종목 공인 · 스키등산 세계선수권 대회",
+        "menu": ["대회 홈", "선수 참가 신청", "실시간 리더보드 (LIVE)", "🔐 심판/관리자 패널"],
+        "desc": "본 대회는 국제산악스키연맹(ISMF) 규정을 준수하며, 필드 심판 시스템과 동기화되어 실시간 기록을 전 세계에 생중계합니다.",
+        "video": "📺 경기 룰 안내 영상", "photo": "📸 올림픽 현장 갤러리", "pay": "💳 참가 신청 및 안전 결제"
     },
     "EN": {
-        "title": "🏔️ Ski Mountaineering Integrated Global Portal",
-        "subtitle": "Official Olympic Sport - Global Information System",
+        "title": "ISMF KOREA CHAMPIONSHIP",
+        "subtitle": "Official Olympic Sport · International Skimo Portal",
         "menu": ["Home", "Athlete Registration", "Live Leaderboard", "🔐 Judge/Admin Panel"],
-        "notice": "🏁 Tournament & Cultural Events Info",
-        "desc": "This tournament complies with ISMF regulations. Scoring and penalties are aggregated in real-time globally via the field judges' mobile web app.",
-        "video_title": "📺 Skimo Rules & Introduction Video",
-        "photo_title": "📸 Olympic Skimo Action Photos",
-        "reg_title": "📝 Athlete Registration & Package Payment",
-        "name": "Full Name", "nation": "Nationality/Team", "event": "Event Category", "pay": "💳 Secure Payment & Confirm",
-        "live_title": "⏱️ Real-Time Race Leaderboard (Global Live)",
-        "judge_title": "🔐 Field Judge Real-Time Control Panel"
+        "desc": "This tournament complies with ISMF regulations. Scoring and penalties are aggregated in real-time globally via the field web app.",
+        "video": "📺 Skimo Rules Video", "photo": "📸 Olympic Action Gallery", "pay": "💳 Register & Secure Pay"
     },
     "FR": {
-        "title": "🏔️ Portail Global Intégré de Ski de Randonnée",
-        "subtitle": "Sport Olympique Officiel - Système d'Information Mondial",
-        "menu": ["Accueil", "Inscription Athlète", "Tableau de Bord Live", "🔐 Panneau des Juges"],
-        "notice": "🏁 Infos sur Tournoi & Événements Culturels",
-        "desc": "Ce tournoi est conforme aux règlements de l'ISMF. Les scores et pénalités sont agrégés en temps réel via l'application mobile des juges.",
-        "video_title": "📺 Vidéo de Présentation & Règles du Skimo",
-        "photo_title": "📸 Photos de Compétition Olympique",
-        "reg_title": "📝 Inscription de l'Athlète & Paiement",
-        "name": "Nom Complet", "nation": "Nationalité/Équipe", "event": "Catégorie d'Événement", "pay": "💳 Paiement Sécurisé & Confirmer",
-        "live_title": "⏱️ Classement En Direct (Live Mondial)",
-        "judge_title": "🔐 Panneau de Contrôle des Juges de Terrain"
+        "title": "CHAMPIONNAT ISMF CORÉE",
+        "subtitle": "Sport Olympique Officiel · Portail International de Skimo",
+        "menu": ["Accueil", "Inscription Athlète", "Tableau Live", "🔐 Panneau des Juges"],
+        "desc": "Ce tournoi est conforme aux règlements de l'ISMF. Les scores sont agrégés en temps réel via l'application mobile des juges.",
+        "video": "📺 Vidéo des Règles", "photo": "📸 Galerie d'Action Olympique", "pay": "💳 S'inscrire et Payer"
     },
     "IT": {
-        "title": "🏔️ Portale Globale Integrato dello Sci Alpinismo",
-        "subtitle": "Sport Olimpico Ufficiale - Sistema Informativo Mondiale",
+        "title": "CAMPIONATO ISMF COREA",
+        "subtitle": "Sport Olimpico Ufficiale · Portale Internazionale Sci Alpinismo",
         "menu": ["Home", "Iscrizione Atleta", "Classifica Live", "🔐 Pannello Giudici"],
-        "notice": "🏁 Info su Torneo ed Eventi Culturali",
-        "desc": "Questo torneo è conforme ai regolamenti ISMF. I punteggi e le penalità vengono aggregati in tempo reale tramite l'app dei giudici.",
-        "video_title": "📺 Video di Introduzione e Regolamento Skimo",
-        "photo_title": "📸 Foto d'Azione delle Olimpiadi di Skimo",
-        "reg_title": "📝 Iscrizione Atleta e Pagamento Pacchetto",
-        "name": "Nome Completo", "nation": "Nazionalità/Squadra", "event": "Categoria Gara", "pay": "💳 Pagamento Sicuro e Conferma",
-        "live_title": "⏱️ Classifica di Gara in Tempo Reale",
-        "judge_title": "🔐 Pannello di Controllo in Tempo Reale dei Giudici"
+        "desc": "Questo torneo è conforme ai regolamenti ISMF. I punteggi vengono aggregati in tempo real tramite l'app dei giudici.",
+        "video": "📺 Video Regolamento", "photo": "📸 Galleria Azione Olimpiadi", "pay": "💳 Iscriviti e Paga"
     },
     "ZH": {
-        "title": "🏔️ 登山滑雪综合全球门户网站",
-        "subtitle": "奥运会正式项目认证 - 全球信息系统",
-        "menu": ["大会主页", "运动员报名", "实时排行榜 (LIVE)", "🔐 裁判/管理员面板"],
-        "notice": "🏁 赛事大纲及文化活动指南",
+        "title": "ISMF 韩国锦标赛",
+        "subtitle": "奥运会正式项目认证 · 登山滑雪国际门户网站",
+        "menu": ["大会主页", "运动员报名", "实时排行榜", "🔐 裁判/管理员"],
         "desc": "本次比赛遵守 ISMF 规定。评分和处罚将通过现场裁判的移动网络应用实时在全球范围内汇总。",
-        "video_title": "📺 登山滑雪规则与介绍视频",
-        "photo_title": "📸 奥运会登山滑雪比赛现场照片",
-        "reg_title": "📝 运动员注册与套餐支付",
-        "name": "姓名", "nation": "国籍/车队", "event": "参赛项目", "pay": "💳 安全支付并确认",
-        "live_title": "⏱️ 实时比赛排行榜（全球直播）",
-        "judge_title": "🔐 现场裁判实时控制面板"
+        "video": "📺 赛事规则视频", "photo": "📸 奥运会现场画廊", "pay": "💳 安全支付并确认"
     },
     "JA": {
-        "title": "🏔️ 山岳スキー総合グローバルポータル",
-        "subtitle": "オリンピック正式種目公認 - 全世界向けシステム",
-        "menu": ["ホーム", "選手参加申し込み", "リアルタイム順位表 (LIVE)", "🔐 審판/管理者パネル"],
-        "notice": "🏁 大会要項および文化イベント案内",
-        "desc": "本大会はISMF規定に準拠しています。スコアやペナルティは、現地審判의 モバイルアプリを通じてリアルタイムで全世界に集計されます。",
-        "video_title": "📺 山岳スキーのルール＆紹介動画",
-        "photo_title": "📸 オリンピック山岳スキー競技写真",
-        "reg_title": "📝 選手登録およびパッケージ決済",
-        "name": "選手名", "nation": "国籍/所属", "event": "参加種目", "pay": "💳 安全な決済と参加確定",
-        "live_title": "⏱️ リアルタイムレース順位表（世界生中継）",
-        "judge_title": "🔐 現地審判専用リアルタイム制御パネル"
+        "title": "ISMF 韓国選手権大会",
+        "subtitle": "オリンピック正式種目公認 · 山岳スキー国際ポータル",
+        "menu": ["ホーム", "選手参加申し込み", "リアルタイム順位表", "🔐 審判/管理者"],
+        "desc": "本大会はISMF規定に準拠しています。スコアやペナルティは、現地審判のアプリを通じてリアルタイムで集計されます。",
+        "video": "📺 競技ルール動画", "photo": "📸 オリンピック写真館", "pay": "💳 安全な決済と確定"
     }
 }
 
-selected_lang_name = st.sidebar.selectbox("🌐 Select Language / 언어 선택", list(LANG_DICT.keys()))
+# 🌐 언어 선택 및 네비게이션 제어는 사이드바 상단에서 깔끔하게 처리
+selected_lang_name = st.sidebar.selectbox("🌐 Select Language", list(LANG_DICT.keys()))
 current_lang = LANG_DICT[selected_lang_name]
 T = LOCALIZED_TEXT[current_lang]
 
-st.title(T["title"])
-st.caption(T["subtitle"])
-st.markdown("---")
+# --- [계획표 2단계 반영] 상단 고정형 메뉴 바 UI 아키텍처 ---
+menu = st.sidebar.radio("🧭 Navigation Menu", T["menu"])
 
+# ==========================================
+# 3. 메인 상단 비주얼 영역 (ISMF 스타일 적용)
+# ==========================================
+# 텍스트가 배경을 가리지 않고 웅장하게 녹아들도록 HTML 컴포넌트로 결합
+st.markdown(f"""
+    <div class="hero-section">
+        <div class="hero-title">{T["title"]}</div>
+        <div class="hero-subtitle">🏔️ {T["subtitle"]}</div>
+    </div>
+""", unsafe_allow_html=True)
+
+# 데이터 보관 세션 (Mock DB)
 if "athletes" not in st.session_state:
     st.session_state.athletes = [
-        {"BIB": "101", "Name": "김민우", "Team": "KOREA", "Status": "RACING", "CP1": "10:15:20", "CP2": "--:--:--", "CP3": "--:--:--", "Penalty": "None"},
-        {"BIB": "102", "Name": "Alex Smith", "Team": "USA", "Status": "RACING", "CP1": "10:14:05", "CP2": "10:45:12", "CP3": "--:--:--", "Penalty": "None"},
-        {"BIB": "103", "Name": "Chloe", "Team": "FRANCE", "Status": "RACING", "CP1": "10:16:55", "CP2": "10:49:30", "CP3": "--:--:--", "Penalty": "None"},
+        {"BIB": "101", "Name": "김민우", "Team": "KOREA", "Status": "RACING", "CP1": "10:15:20", "CP2": "--:--:--", "Penalty": "None"},
+        {"BIB": "102", "Name": "Alex Smith", "Team": "USA", "Status": "RACING", "CP1": "10:14:05", "CP2": "10:45:12", "Penalty": "None"},
+        {"BIB": "103", "Name": "Chloe", "Team": "FRANCE", "Status": "RACING", "CP1": "10:16:55", "CP2": "10:49:30", "Penalty": "None"},
     ]
 
-menu = st.sidebar.radio("🧭 Navigation", T["menu"])
+# 모든 컨텐츠는 content-box 클래스로 감싸서 균형 잡힌 가독성 제공
+st.markdown('<div class="content-box">', unsafe_allow_html=True)
 
-# --- [모듈 1] 대회 홈 (유튜브 비디오 및 올림픽 사진 추가) ---
+# --- [모듈 1] 대회 홈 화면 (가독성 100% 보장 레이아웃) ---
 if menu == T["menu"][0]:
-    st.header(T["notice"])
+    st.header("🏁 Upcoming Events & Overview")
     
-    # 레이아웃을 3단으로 균형 있게 분할하여 안내 설명이 가려지지 않도록 설계
+    # 3단 분할 레이아웃으로 안내글, 유튜브, 올림픽 사진을 가로로 깔끔하게 배치!
     col_text, col_video, col_photo = st.columns([4, 4, 4])
     
     with col_text:
-        st.markdown(f"### 🏔️ About the Race")
+        st.markdown(f"### 📢 Information")
         st.write(T["desc"])
         st.markdown("""
-        * **대회 일시:** 2026년 겨울 시즌 중 개최 예정
-        * **경기 규정:** ISMF 국제 규정 전면 적용 (스프린트, 인디비주얼, 버티컬)
-        * **예상 규모:** 국내외 선수, 관계자 및 관람객 3,000명~5,000명 참여 규모의 초대형 포럼 연계 행사
+        * **Location:** Pyeongchang / Jeongseon, Gangwon, KOREA
+        * **Sanctioned by:** International Ski Mountaineering Federation (ISMF)
+        * **Expected Scale:** 3,000+ Global Participants & Winter Festivals
         """)
-        st.info("💡 **Olympic System Info**\nThis website automatically translates into 6 languages and synchronizes with the judges' telemetry system.")
+        st.info("⚙️ **Global Sync System**\nThis platform is fully responsive and supports real-time synchronization with race control.")
         
     with col_video:
-        st.markdown(f"### {T['video_title']}")
-        # 요청한 산악스키 안내 및 룰 설명 유튜브 영상 삽입
+        st.markdown(f"### {T['video']}")
         st.video("https://youtu.be/KgyX5OjMTyM?si=Uu8mCwLV2X4an8Wk")
-        st.caption("출처: 국제산악스키연맹(ISMF) 공식 안내 영상")
+        st.caption("ISMF Official Rule Guide Video")
 
     with col_photo:
-        st.markdown(f"### {T['photo_title']}")
-        # 올림픽 산악스키 선수의 역동적인 주행 사진 삽입 (안내 창을 가리지 않는 독립 배치)
-        st.image("https://images.unsplash.com/photo-1614531341773-3bef8ca0da3b?auto=format&fit=crop&w=500&q=80", 
-                 caption="올림픽 경기에서 설산을 질주하는 산악스키 국가대표 선수")
-        
-    # 하단 스폰서 영역 유지
+        st.markdown(f"### {T['photo']}")
+        # 고해상도 리얼 올림픽 산악스키 주행 컷 적용
+        st.image("https://images.unsplash.com/photo-1614531341773-3bef8ca0da3b?auto=format&fit=crop&w=600&q=80", 
+                 caption="Olympic Ski Mountaineering Athlete in Action")
+
+    # 하단 파트너 배너 구역
     st.markdown("---")
     st.subheader("🤝 Global Partners & Sponsors")
-    c_ad1, c_ad2 = st.columns(2)
-    c_ad1.info("⛷️ **Premium Sponsor Slot**\nGlobal Outdoor Brand Banner Area")
-    c_ad2.info("🥤 **Official Energy Drink Slot**\nOfficial Tournament Beverage Partner")
+    c_ad1, c_ad2, c_ad3 = st.columns(3)
+    c_ad1.info("⛷️ **Premium Sponsor**\nGlobal Brand Ad Slot")
+    c_ad2.info("🏨 **Official Lodging**\nResort & Hotel Partner")
+    c_ad3.info("🥤 **Official Beverage**\nEnergy Drink Sponsor")
 
-# --- [모듈 2] 참가 신청 ---
+# --- [모듈 2] 선수 참가 신청 및 행정 결제 ---
 elif menu == T["menu"][1]:
-    st.header(T["reg_title"])
+    st.header(T["reg_title"] if "reg_title" in T else T["menu"][1])
     with st.form("global_reg_form"):
-        p_name = st.text_input(T["name"])
-        p_nation = st.text_input(T["nation"])
-        p_event = st.selectbox(T["event"], ["Sprint", "Individual", "Vertical"])
-        
+        p_name = st.text_input("Name")
+        p_nation = st.text_input("Nationality")
+        p_event = st.selectbox("Event Category", ["Sprint", "Individual", "Vertical"])
         st.metric("Registration Fee", "30,000 KRW")
         submit_btn = st.form_submit_button(T["pay"])
-        
         if submit_btn and p_name:
-            new_member = {"BIB": str(100 + len(st.session_state.athletes)+1), "Name": p_name, "Team": p_nation, "Status": "RACING", "CP1": "--:--:--", "CP2": "--:--:--", "CP3": "--:--:--", "Penalty": "None"}
+            new_member = {"BIB": str(100 + len(st.session_state.athletes)+1), "Name": p_name, "Team": p_nation, "Status": "RACING", "CP1": "--:--:--", "CP2": "--:--:--", "Penalty": "None"}
             st.session_state.athletes.append(new_member)
-            st.success("Success! / Registration Complete!")
+            st.success("Registration Successful!")
 
-# --- [모듈 3] 리더보드 ---
+# --- [모듈 3] 실시간 리더보드 ---
 elif menu == T["menu"][2]:
-    st.header(T["live_title"])
+    st.header(T["menu"][2])
     df = pd.DataFrame(st.session_state.athletes)
     st.dataframe(df.set_index("BIB"), use_container_width=True)
 
-# --- [모듈 4] 심판 전용 시스템 ---
+# --- [모듈 4] 🔐 심판 및 관리자 전용 제어 시스템 ---
 elif menu == T["menu"][3]:
-    st.header(T["judge_title"])
+    st.header(T["menu"][3])
     athlete_names = [f"#{a['BIB']} - {a['Name']}" for a in st.session_state.athletes]
-    
-    target_athlete = st.selectbox("🎯 Select Athlete", athlete_names)
+    target_athlete = st.selectbox("🎯 Target Athlete", athlete_names)
     target_bib = target_athlete.split(" - ")[0].replace("#", "")
-    target_cp = st.radio("📍 Checkpoint", ["CP1", "CP2", "CP3"])
-    penalty_select = st.selectbox("⚠️ Penalty Rules (ISMF)", ["None", "+1:00 Skin Regulation", "+3:00 Missing Gear", "DSQ (Disqualified)"])
+    target_cp = st.radio("📍 Select Checkpoint", ["CP1", "CP2"])
+    penalty_select = st.selectbox("⚠️ Penalty Rules", ["None", "+1:00 Skin Violation", "DSQ"])
     
-    if st.button("🚀 Push Data to Global Server"):
+    if st.button("🚀 Push Data to Live Leaderboard"):
         current_time = datetime.now().strftime("%H:%M:%S")
         for athlete in st.session_state.athletes:
             if athlete["BIB"] == target_bib:
                 athlete[target_cp] = current_time
                 if penalty_select != "None":
                     athlete["Penalty"] = penalty_select
-        st.success("Data synchronized successfully!")
+        st.success("Data synced successfully!")
         time.sleep(0.5)
         st.rerun()
+
+st.markdown('</div>', unsafe_allow_html=True)
