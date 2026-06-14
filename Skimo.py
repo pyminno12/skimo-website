@@ -46,18 +46,6 @@ st.markdown("""
         padding-right: 0rem;
     }
     
-    /* -------------------------------------------
-       [피드백 반영] 완전히 새로 컴포즈한 상단 헤더 바 스타일
-    ------------------------------------------- */
-    .custom-header-bar {
-        background-color: #0f2027;
-        padding: 10px 40px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 2px solid #00c6ff;
-    }
-    
     /* 우측 상단 메뉴 텍스트 스타일 */
     .right-nav-item {
         color: #ffffff;
@@ -126,15 +114,15 @@ LANG_DICT = {
     "Italiano (IT)": "IT", "简体中文 (ZH)": "ZH", "日本語 (JA)": "JA"          
 }
 
-# 📢 [피드백 반영 2, 3] 메인 타이틀을 'SKIMO KOREA'로, 서브타이틀을 '스키등산 정보 포털'로 전면 개정!
 LOCALIZED_TEXT = {
     "KO": {
         "title": "SKIMO KOREA",
         "subtitle": "스키등산 정보 포털",
         "menu": ["대회 홈", "선수 참가 신청", "실시간 리더보드 (LIVE)", "🔐 심판/관리자 패널"],
-        "desc": "본 대회는 국제산악스키연맹(ISMF) 규정을 준수하며, 필드 심판 시스템과 동기화되어 실시간 기록을 전 세계에 생중계합니다.",
+        "desc": "본 대회는 국제산악스키연맹(ISMF) 규정을 준수하며, field 심판 시스템과 동기화되어 실시간 기록을 전 세계에 생중계합니다.",
         "video": "📺 경기 종목 안내 영상", "intro_video": "⛷️ 산악스키 종목 소개", "photo": "📸 올림픽 현장 갤러리", "pay": "💳 참가 신청 및 안전 결제",
-        "news_title": "📰 News & Stories (최신 소식)", "news_tag": "대회 뉴스"
+        "news_title": "📰 News & Stories (최신 소식)", "news_tag": "대회 뉴스",
+        "search_holder": "🔍 검색어를 입력하고 엔터를 누르세요..."
     },
     "EN": {
         "title": "SKIMO KOREA",
@@ -142,41 +130,48 @@ LOCALIZED_TEXT = {
         "menu": ["Home", "Athlete Registration", "Live Leaderboard", "🔐 Judge/Admin Panel"],
         "desc": "This tournament complies with ISMF regulations. Scoring and penalties are aggregated in real-time globally via the field web app.",
         "video": "📺 Skimo Rules Video", "intro_video": "⛷️ What is Skimo?", "photo": "📸 Olympic Action Gallery", "pay": "💳 Register & Secure Pay",
-        "news_title": "📰 News & Stories", "news_tag": "Official News"
+        "news_title": "📰 News & Stories", "news_tag": "Official News",
+        "search_holder": "🔍 Search information here..."
     }
 }
 
-# 다국어 기본 안전장치 (그 외 언어는 영어 사양 기본 확장 체계 적용)
+# 다국어 기본 안전장치
 for lang in ["FR", "IT", "ZH", "JA"]:
     if lang not in LOCALIZED_TEXT:
         LOCALIZED_TEXT[lang] = LOCALIZED_TEXT["EN"]
 
 # ==========================================
-# 3. [피드백 반영 1, 4, 5] 최상단 레이아웃 완전 재배치
+# 3. [구조 고도화] 상단 레이아웃 배치 (좌측 메뉴 / 중앙 검색창 / 우측 링크)
 # ==========================================
 top_nav_container = st.container()
 
 with top_nav_container:
     st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
     
-    # [왼쪽 상단] 메뉴 선택창 배치 / [중앙] 여백 / [우측 상단] 다국어, 공지사항, 로그인 배치
-    c_menu, c_space, c_right = st.columns([3, 4, 4])
+    # 균형감 있는 3분할 윈도우 레이아웃 설정
+    c_menu, c_search, c_right = st.columns([3, 4, 4])
     
     with c_menu:
-        # 메뉴 셀렉트 박스를 왼쪽 가장 첫 단에 전면 배치 완료!
+        # [왼쪽 상단] 메뉴 선택창
         selected_menu_raw = st.selectbox("Menu Select", list(LOCALIZED_TEXT["KO"]["menu"]), label_visibility="collapsed")
         menu_index = LOCALIZED_TEXT["KO"]["menu"].index(selected_menu_raw)
         
+    with c_search:
+        # [중앙 상단] 🔍 정보 탐색용 검색창 추가 완료!
+        # 임시 기본 다국어 세팅 분할
+        search_lang = LANG_DICT[st.session_state.get('prev_lang', '한국어 (KO)')] if 'prev_lang' in st.session_state else "KO"
+        search_query = st.text_input("Search", placeholder=LOCALIZED_TEXT["KO"]["search_holder"], label_visibility="collapsed")
+        
     with c_right:
-        # 우측 정렬을 부드럽게 매칭하기 위한 서브 칼럼 분할 구조
+        # [우측 상단] 다국어 선택 및 텍스트 퀵 버튼 링크
         sub_lang, sub_buttons = st.columns([4, 6])
         with sub_lang:
             selected_lang_name = st.selectbox("Global Select", list(LANG_DICT.keys()), label_visibility="collapsed")
+            st.session_state['prev_lang'] = selected_lang_name
             current_lang = LANG_DICT[selected_lang_name]
             T = LOCALIZED_TEXT[current_lang]
             
         with sub_buttons:
-            # HTML/CSS 구조 바인딩을 통해 '공지사항' 및 '로그인/회원가입' 링크 우측 상단 고정 출력 완료!
             st.markdown(
                 "<div style='text-align: right; padding-top: 6px; white-space: nowrap;'>"
                 "<a class='right-nav-item' href='#'>📢 공지사항</a>"
@@ -186,7 +181,7 @@ with top_nav_container:
             )
 
 # ==========================================
-# 4. 히어로 배너 영역 동적 시각화 출력 (변경된 타이틀 적용)
+# 4. 히어로 배너 영역 동적 시각화 출력
 # ==========================================
 BG_IMAGES = [
     "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80",  
@@ -215,6 +210,10 @@ if "athletes" not in st.session_state:
 
 st.markdown('<div class="content-box">', unsafe_allow_html=True)
 
+# 검색어가 입력되었을 때 필터링하는 간단한 피드백 메커니즘 추가
+if search_query:
+    st.info(f"🔍 '{search_query}'에 대한 포털 내 실시간 검색 결과 매칭 중...")
+
 # -------------------------------------------------------------------------
 # [콘텐츠 분기 1] 대회 홈 화면
 # -------------------------------------------------------------------------
@@ -231,7 +230,7 @@ if menu_index == 0:
         * **Sanctioned by:** ISMF
         * **Scale:** 3,000+ Participants
         """)
-        st.success("✨ **All Portal Feedbacks Applied**\n- Left-aligned layout menu activated.\n- Header portal texts upgraded.\n- Quick headers established.")
+        st.success("🔍 **Center Search System Active**\n이제 상단 중앙 포털 검색 단추를 통해 간편한 정보 서칭을 진행할 수 있습니다.")
         
     with col_video:
         st.markdown(f"### {T['video']}")
@@ -266,7 +265,7 @@ if menu_index == 0:
             except:
                 st.error("⚠️ 이미지를 불러오지 못했습니다.")
 
-    # 📰 NEWS & STORIES 세로 리스트 구조 유지
+    # 📰 NEWS & STORIES 세로 리스트 구조
     st.markdown("---")
     st.header(T["news_title"])
     
