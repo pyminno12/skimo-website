@@ -4,11 +4,11 @@ from datetime import datetime
 import time
 
 # ==========================================
-# 1. 페이지 설정 및 레이아웃 규격 최적화
+# 1. 페이지 설정 및 전역 화면 레이아웃 최적화
 # ==========================================
 st.set_page_config(page_title="SKIMO KOREA", page_icon="🏔️", layout="wide")
 
-# 배경 이미지 링크 매핑 (선택된 메뉴에 따라 유동적으로 변화)
+# 배경 이미지 풀 리스트 (상단 메뉴 선택 시 연동 작동)
 BG_IMAGES = [
     "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80",  
     "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=1800&q=80",  
@@ -21,12 +21,10 @@ if "menu_idx" not in st.session_state:
 
 selected_bg = BG_IMAGES[st.session_state.menu_idx]
 
-# 전체 화면 배경 스타일 및 컴포넌트 커스텀 CSS 적용
+# 컴포넌트 튜닝 및 UI 고도화 커스텀 CSS
 st.markdown(f"""
     <style>
-    /* -------------------------------------------
-       [기본 바 완전 제거] 스트림릿 기본 상단 바 제거
-    ------------------------------------------- */
+    /* Streamlit 기본 탑 헤더 영역 숨김 처리 */
     header[data-testid="stHeader"] {{
         display: none !important;
     }}
@@ -34,7 +32,7 @@ st.markdown(f"""
         display: none !important;
     }}
     
-    /* 마우스 커서 텍스트 입력창 변환 방지 규칙 */
+    /* 셀렉트박스 마우스 오버 시 선택 커서 강제 속성 */
     div[data-testid="stSelectbox"] div[role="combobox"] {{
         cursor: pointer !important;
     }}
@@ -46,7 +44,7 @@ st.markdown(f"""
         cursor: pointer !important;
     }}
 
-    /* 스트림릿 기본 사이드바 숨기기 및 본문 패딩 제로화 */
+    /* 좌측 사이드바 하이딩 및 여백 완벽 제로화 */
     [data-testid="stSidebar"] {{
         display: none !important;
     }}
@@ -58,34 +56,34 @@ st.markdown(f"""
         padding-right: 0rem;
     }}
     
-    /* 웹사이트 전체를 감싸는 산악 배경화면 설정 */
+    /* 다크 톤 알파 마스킹이 결합된 산악 고해상도 배경 스킨 */
     .stApp {{
-        background: linear-gradient(rgba(15, 32, 39, 0.85), rgba(44, 83, 100, 0.75)), url('{selected_bg}') no-repeat center center fixed;
+        background: linear-gradient(rgba(15, 32, 39, 0.82), rgba(44, 83, 100, 0.72)), url('{selected_bg}') no-repeat center center fixed;
         background-size: cover !important;
     }}
     
-    /* 중앙 정렬 컨테이너 규격 (최대 1200px 제한) */
+    /* 중앙 그리드 보정용 고정 래퍼 크기 */
     .centered-wrapper {{
         max-width: 1200px;
         margin: 0 auto;
         padding: 0 20px;
     }}
     
-    /* 상단 투명 네비게이션 바 배경 */
+    /* 상단 GNB 바 블러 백그라운드 */
     .custom-header-bg {{
         background-color: rgba(15, 32, 39, 0.4);
-        backdrop-filter: blur(5px);
+        backdrop-filter: blur(6px);
         width: 100%;
-        padding: 10px 0;
+        padding: 11px 0;
     }}
     
-    /* 우측 상단 메뉴 텍스트 스타일 */
+    /* 서브 네비게이션 앵커 스타일 */
     .right-nav-item {{
         color: #ffffff;
         font-size: 14px;
         font-weight: 500;
         text-decoration: none;
-        margin-left: 20px;
+        margin-left: 22px;
         cursor: pointer;
         transition: color 0.2s;
     }}
@@ -93,10 +91,10 @@ st.markdown(f"""
         color: #00c6ff;
     }}
     
-    /* 타이틀 섹션 규격 설정 */
+    /* 중앙 메인 타이틀 정렬 섹션 */
     .hero-section {{
-        padding-top: 50px;
-        padding-bottom: 15px;
+        padding-top: 60px;
+        padding-bottom: 25px;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -104,25 +102,38 @@ st.markdown(f"""
         color: white;
         text-align: center;
     }}
-    .hero-title {{ font-size: 42px; font-weight: 800; text-shadow: 3px 3px 8px rgba(0,0,0,0.9); margin-bottom: 5px; letter-spacing: 1px; }}
-    .hero-subtitle {{ font-size: 18px; font-weight: 500; text-shadow: 2px 2px 4px rgba(0,0,0,0.7); color: #00c6ff; margin-bottom: 20px; }}
+    .hero-title {{ 
+        font-size: 44px; 
+        font-weight: 800; 
+        text-shadow: 3px 3px 10px rgba(0,0,0,0.95); 
+        margin-bottom: 6px; 
+        letter-spacing: 1.5px; 
+    }}
+    .hero-subtitle {{ 
+        font-size: 18px; 
+        font-weight: 500; 
+        text-shadow: 2px 2px 5px rgba(0,0,0,0.8); 
+        color: #00c6ff; 
+        margin-bottom: 0px; 
+    }}
     
     /* -------------------------------------------
-       [핵심 수정] 사진 속 커다란 반투명 글래스 박스 스킨
+       [요청 수정 반영] 3번 형태의 커다란 반투명 회색 글래스 박스 스킨
     ------------------------------------------- */
     .glass-search-container {{
         width: 100%;
         max-width: 1160px;
-        margin: 0 auto 35px auto;
-        background: rgba(255, 255, 255, 0.08); /* 반투명 배경 */
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.25); /* 연한 회색 테두리 */
-        border-radius: 20px; /* 라운드 처리 */
-        padding: 5px 15px; /* 내부 스트림릿 인풋 위치 교정용 */
+        margin: 25px auto 40px auto;
+        background: rgba(255, 255, 255, 0.08);    /* 반투명 회색 스킨 채우기 */
+        backdrop-filter: blur(14px);               /* 배경 글래스 모피즘 블러 */
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(255, 255, 255, 0.23); /* 외곽 글래스 라인 */
+        border-radius: 18px;                       /* 부드러운 라운딩 스킨 */
+        padding: 6px 16px;                         /* 내부 인풋 정렬 매칭 트림 */
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
     }}
     
-    /* 외부의 투박하고 검은 입력창 스타일을 지우고 반투명 박스에 투명하게 동화 */
+    /* 스트림릿 기본 텍스트 인풋 스타일을 투명화하여 글래스 박스 내부에 강제 동화 */
     .glass-search-container div[data-testid="stTextInput"] input {{
         background-color: transparent !important;
         border: none !important;
@@ -131,7 +142,7 @@ st.markdown(f"""
         padding: 12px 10px !important;
     }}
     .glass-search-container div[data-testid="stTextInput"] input::placeholder {{
-        color: rgba(255, 255, 255, 0.6) !important;
+        color: rgba(255, 255, 255, 0.55) !important;
     }}
     .glass-search-container div[data-testid="stTextInput"] div {{
         border: none !important;
@@ -139,16 +150,16 @@ st.markdown(f"""
         box-shadow: none !important;
     }}
     
-    /* 하단 설명 레이아웃용 글래스모피즘 컨테이너 */
+    /* 메인 서브 리포트 데이터 구역 플레이트 */
     .content-box {{ 
         max-width: 1200px; 
-        margin: 0 auto 50px auto; 
-        padding: 30px; 
-        background: rgba(255, 255, 255, 0.07);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        margin: 0 auto 60px auto; 
+        padding: 35px; 
+        background: rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.13);
         color: #ffffff;
     }}
     
@@ -156,10 +167,10 @@ st.markdown(f"""
         color: #ffffff !important;
     }}
     
-    /* 리스트형 뉴스 레이아웃 스타일 */
+    /* 피드 뉴스 텍스트 템플릿 로우 */
     .news-list-item {{
-        padding: 14px 15px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 15px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -185,7 +196,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. 다국어 데이터 배열 및 텍스트 셋업
+# 2. 다국어 글로벌 번역 데이터 스키마 정의
 # ==========================================
 LANG_DICT = {
     "한국어 (KO)": "KO", "English (EN)": "EN", "Français (FR)": "FR",       
@@ -218,7 +229,7 @@ for lang in ["FR", "IT", "ZH", "JA"]:
         LOCALIZED_TEXT[lang] = LOCALIZED_TEXT["EN"]
 
 # ==========================================
-# 3. 상단 네비게이션 바 레이아웃
+# 3. 네비게이션 헤더 레이아웃 빌드
 # ==========================================
 st.markdown('<div class="custom-header-bg">', unsafe_allow_html=True)
 st.markdown('<div class="centered-wrapper">', unsafe_allow_html=True)
@@ -252,7 +263,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 4. 히어로 타이틀 영역 (위쪽 작은 테두리는 완벽 삭제!)
+# 4. 히어로 헤더 섹션 (1번 사진 속 상단 얇은 잔상 라인 영구 제거 완료)
 # ==========================================
 st.markdown(f"""
     <div class="centered-wrapper">
@@ -264,19 +275,19 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 5. [핵심 수정] 검색 단추를 커다란 반투명 글래스 박스 내부로 통합 배치
+# 5. [수정 핵심] 대형 회색 글래스 박스 프레임 내부로 검색 컴포넌트 탑재
 # ==========================================
 st.markdown('<div class="centered-wrapper">', unsafe_allow_html=True)
 st.markdown('<div class="glass-search-container">', unsafe_allow_html=True)
 
-# 밑에서 따로 돌던 기존 입력창을 가져와 커다란 글래스 테두리 박스 정중앙에 매핑
+# 기존에 최하단에서 홀로 이격되어 작동하던 텍스트 입력창을 커다란 반투명 글래스 컨테이너 안으로 격하시켜 통합
 search_query = st.text_input("Main Search Bar", placeholder=T["search_holder"], label_visibility="collapsed")
 
 st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 6. 하단 콘텐츠 영역 바인딩
+# 6. 메인 바디 컨텐츠 플레이어 라우팅
 # ==========================================
 if "athletes" not in st.session_state:
     st.session_state.athletes = [
@@ -285,14 +296,13 @@ if "athletes" not in st.session_state:
         {"BIB": "103", "Name": "Chloe", "Team": "FRANCE", "Status": "RACING", "CP1": "10:16:55", "CP2": "10:49:30", "Penalty": "None"},
     ]
 
-# 본문 내용용 반투명 하단 컨테이너
 st.markdown('<div class="centered-wrapper"><div class="content-box">', unsafe_allow_html=True)
 
 if search_query:
     st.info(f"🔍 '{search_query}'에 대한 포털 내 실시간 검색 결과 매칭 중...")
 
 # -------------------------------------------------------------------------
-# [콘텐츠 분기 1] 대회 홈 화면
+# [서브페이지 1] 대회 홈 대시보드
 # -------------------------------------------------------------------------
 if menu_index == 0:
     st.markdown("## 🏁 Upcoming Events & Overview")
@@ -307,7 +317,7 @@ if menu_index == 0:
         * **Sanctioned by:** ISMF
         * **Scale:** 3,000+ Participants
         """)
-        st.success("🎨 **레이아웃 매칭 완료**\n하단에 겉돌던 검색 필드가 커다란 반투명 글래스 박스 테두리 안으로 완벽히 통합 구동됩니다.")
+        st.success("⚙️ **인터페이스 보정 완료**\n상단의 구형 잔상 라인은 삭제되었으며, 실제 작동하는 검색 컴포넌트가 대형 반투명 스킨 내부로 수렴되었습니다.")
         
     with col_video:
         st.markdown(f"### {T['video']}")
@@ -342,8 +352,8 @@ if menu_index == 0:
             except:
                 st.error("⚠️ 이미지를 불러오지 못했습니다.")
 
-    # 📰 NEWS & STORIES
-    st.markdown("<hr style='border-color: rgba(255,255,255,0.15);'>", unsafe_allow_html=True)
+    # 📰 NEWS & STORIES 데이터 그리드 피드
+    st.markdown("<hr style='border-color: rgba(255,255,255,0.12);'>", unsafe_allow_html=True)
     st.markdown(f"## {T['news_title']}")
     
     news_items = [
@@ -364,7 +374,7 @@ if menu_index == 0:
         }
     ]
     
-    st.markdown("<div style='background-color: rgba(255, 255, 255, 0.05); padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
+    st.markdown("<div style='background-color: rgba(255, 255, 255, 0.04); padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);'>", unsafe_allow_html=True)
     for item in news_items:
         st.markdown(f"""
             <div class="news-list-item">
@@ -375,7 +385,7 @@ if menu_index == 0:
     st.markdown("</div>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# [콘텐츠 분기 2] 선수 참가 신청
+# [서브페이지 2] 참가 신청 폼 모듈
 # -------------------------------------------------------------------------
 elif menu_index == 1:
     st.markdown(f"## {LOCALIZED_TEXT['KO']['menu'][1]}")
@@ -391,7 +401,7 @@ elif menu_index == 1:
             st.success("Registration Successful!")
 
 # -------------------------------------------------------------------------
-# [콘텐츠 분기 3] 실시간 리더보드
+# [서브페이지 3] 라이브 전광판 필드 리더보드
 # -------------------------------------------------------------------------
 elif menu_index == 2:
     st.markdown(f"## {LOCALIZED_TEXT['KO']['menu'][2]}")
@@ -399,7 +409,7 @@ elif menu_index == 2:
     st.dataframe(df.set_index("BIB"), use_container_width=True)
 
 # -------------------------------------------------------------------------
-# [콘텐츠 분기 4] 심판 패널
+# [서브페이지 4] 중앙 관제 패널 심판 허브
 # -------------------------------------------------------------------------
 elif menu_index == 3:
     st.markdown(f"## {LOCALIZED_TEXT['KO']['menu'][3]}")
