@@ -8,22 +8,39 @@ import time
 # ==========================================
 st.set_page_config(page_title="ISMF Korea Global Portal", page_icon="🏔️", layout="wide")
 
-# 사이드바와 스트림릿 기본 상단 시스템 헤더를 완전히 제거하는 CSS
+# 사이드바/시스템 바 제거 및 [마우스 커서 교정]을 위한 CSS
 st.markdown("""
     <style>
     /* -------------------------------------------
-       [치명적 문제 해결] 스트림릿 기본 검은색 상단 바 및 
-       오른쪽 시스템 메뉴(Share, 별, 펜, Git 마크 등) 완전 제거
+       [치명적 문제 해결 1] 스트림릿 기본 검은색 상단 바 완전 제거
     ------------------------------------------- */
     header[data-testid="stHeader"] {
         display: none !important;
     }
-    
-    /* 기본 헤더가 사라지면서 생기는 상단 여백 빈공간까지 완벽하게 밀착 제거 */
     .stAppDeployDropdown {
         display: none !important;
     }
     
+    /* -------------------------------------------
+       [치명적 문제 해결 2] 마우스 커서 텍스트 입력창 변환 방지
+       셀렉트 박스 영역을 클릭할 때 일반 마우스(pointer/default)로 강제 고정
+    ------------------------------------------- */
+    /* 드롭다운 입력창 전체의 커서를 손가락 모양으로 고정 */
+    div[data-testid="stSelectbox"] div[role="combobox"] {
+        cursor: pointer !important;
+    }
+    
+    /* 입력창 내부 텍스트 영역에서 텍스트 커서(I-beam)가 뜨는 것 차단 */
+    div[data-testid="stSelectbox"] input {
+        cursor: pointer !important;
+        caret-color: transparent !important; /* 텍스트 깜빡이 커서 숨기기 */
+    }
+    
+    /* 드롭다운 아래로 펼쳐지는 메뉴 리스트 아이템들도 전부 손가락 커서로 통일 */
+    div[data-baseweb="popover"] li {
+        cursor: pointer !important;
+    }
+
     /* 1. 스트림릿 기본 사이드바 숨기기 및 본문 패딩 제거 */
     [data-testid="stSidebar"] {
         display: none !important;
@@ -35,7 +52,7 @@ st.markdown("""
         padding-right: 0rem;
     }
     
-    /* 2. 상단 고정형 글로벌 내비게이션 바 레이아웃 (검은 바가 사라져서 이제 맨 위로 딱 붙음!) */
+    /* 2. 상단 고정형 글로벌 내비게이션 바 레이아웃 */
     .custom-top-bar {
         background-color: #0f2027;
         padding: 15px 40px;
@@ -90,7 +107,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. 다국어 데이터 배열 (6개국어 완벽 동기화)
+# 2. 다국어 데이터 배열
 # ==========================================
 LANG_DICT = {
     "한국어 (KO)": "KO", "English (EN)": "EN", "Français (FR)": "FR",       
@@ -126,7 +143,7 @@ LOCALIZED_TEXT = {
         "title": "CAMPIONATO ISMF COREA",
         "subtitle": "Sport Olimpico Ufficiale · Portale Internazionale Sci Alpinismo",
         "menu": ["Home", "Iscrizione Atleta", "Classifica Live", "🔐 Pannello Giudici"],
-        "desc": "Questo torneo é conforme ai regolamenti ISMF. I punteggi vengono aggregati in tempo real tramite l'app dei giudici.",
+        "desc": "Questo torneo è conforme ai regolamenti ISMF. I punteggi vengono aggregati in tempo real tramite l'app dei giudici.",
         "video": "📺 Video Regolamento", "photo": "📸 Galleria Azione Olimpiadi", "pay": "💳 Iscriviti e Paga",
         "news_title": "📰 Notizie & Storie", "news_tag": "Notizie Ufficiali"
     },
@@ -134,7 +151,7 @@ LOCALIZED_TEXT = {
         "title": "ISMF 韩国锦标赛",
         "subtitle": "奥运会正式项目认证 · 登山滑雪国际门户网站",
         "menu": ["大会主页", "运动员报名", "实时排行榜", "🔐 裁判/管理员"],
-        "desc": "本次比赛遵守 ISMF 规定。评分和处罚将通过现场裁判的移动网络应用实时在全球范围内汇总。",
+        "desc": "本次比赛遵守 ISMF 规定。评分 and 处罚将通过现场裁判의 移动网络应用实时在全球范围内汇总。",
         "video": "📺 赛事规则视频", "photo": "📸 奥运会现场画廊", "pay": "💳 安全支付并确认",
         "news_title": "📰 新闻与故事", "news_tag": "官方新闻"
     },
@@ -142,7 +159,7 @@ LOCALIZED_TEXT = {
         "title": "ISMF 韓国選手権大会",
         "subtitle": "オリンピック正式種目公認 · 山岳スキー国際ポータル",
         "menu": ["ホーム", "選手参加申し込み", "リアルタイム順位表", "🔐 審判/管理者"],
-        "desc": "本大会はISMF規定に準拠しています。スコ아やペナルティ는、現地審判의 アプリを通じてリアルタイムで集計されます。",
+        "desc": "本大会はISMF規定에 준거해 있습니다. 스코어 및 페널티는 현지 심판의 앱을 통해 실시간으로 집계됩니다.",
         "video": "📺 競技ルール動画", "photo": "📸 オリンピック写真館", "pay": "💳 安全な決済と確定",
         "news_title": "📰 ニュース＆ストーリー", "news_tag": "公式ニュース"
     }
@@ -154,19 +171,18 @@ LOCALIZED_TEXT = {
 top_nav_container = st.container()
 
 with top_nav_container:
-    # 3개의 구역을 나란히 배치하여 시스템 헤더 방해 없이 완전 노출
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True) # 아주 미세한 상단 패딩 조절
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
     c_logo, c_menu, c_lang = st.columns([3, 5, 2])
     
     with c_logo:
         st.markdown("<div style='padding-top:5px;'><span style='background-color:#021b29; padding: 10px 15px; border-radius:5px; border: 1px solid #00c6ff; color:white; font-weight:bold; font-size:15px;'>🏔️ ISMF NAVIGATION BAR</span></div>", unsafe_allow_html=True)
         
     with c_menu:
-        selected_menu_raw = st.selectbox("🧭 Menu Select", list(LOCALIZED_TEXT["KO"]["menu"]), label_visibility="collapsed")
+        selected_menu_raw = st.selectbox("Menu Select", list(LOCALIZED_TEXT["KO"]["menu"]), label_visibility="collapsed")
         menu_index = LOCALIZED_TEXT["KO"]["menu"].index(selected_menu_raw)
         
     with c_lang:
-        selected_lang_name = st.selectbox("🌐 Global", list(LANG_DICT.keys()), label_visibility="collapsed")
+        selected_lang_name = st.selectbox("Global Select", list(LANG_DICT.keys()), label_visibility="collapsed")
         current_lang = LANG_DICT[selected_lang_name]
         T = LOCALIZED_TEXT[current_lang]
 
@@ -213,7 +229,7 @@ if menu_index == 0:
         * **Sanctioned by:** International Ski Mountaineering Federation (ISMF)
         * **Expected Scale:** 3,000+ Global Participants & Winter Festivals
         """)
-        st.info("🚀 **System Cleared**\nAll default Streamlit system menus and black headers have been completely injected and hidden.")
+        st.info("🎯 **Cursor Bug Fixed**\nAll navigation selectors are now customized to use standard pointer hand icons.")
         
     with col_video:
         st.markdown(f"### {T['video']}")
