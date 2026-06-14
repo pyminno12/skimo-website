@@ -237,26 +237,37 @@ if menu_index == 0:
         st.video("https://youtu.be/nLjES8kuFRg?si=xu3P1kuKedFOdjRl")
 
     with col_photo:
-    st.markdown(f"### {T['photo']}")
-    
-    # 🔗 깃허브 통합 연동을 위한 올림픽 이미지 실제 파일명 맵
-    gallery_images = [
-        {"path": "skimo_race_1.jpg", "caption": "❄️ 눈보라를 뚫고 올라가는 한계 극복의 업힐 레이스"},
-        {"path": "skimo_race_2.jpg", "caption": "🏅 오륜기 마크 앞에서 펼쳐지는 치열한 선두권 경쟁"},
-        {"path": "skimo_race_3.jpg", "caption": "🎉 꿈의 무대, 올림픽 포디움에 선 영광의 메달리스트들"}
-    ]
-    
-    # 유저가 조작할 수 있는 라디오 인터페이스
-    photo_idx = st.radio("📸 사진 선택", [1, 2, 3], horizontal=True, label_visibility="collapsed")
-    selected_photo = gallery_images[photo_idx - 1]
-    
-    # 깃허브 웹 환경과 로컬 환경 어디서든 100% 사진이 뜨도록 설계된 2중 안전 장치
-    try:
-        # 1차 시도: 영문 이름으로 매칭된 로컬/서버 내 파일 직접 로드
-        st.image(selected_photo["path"], use_container_width=True)
-        st.caption(f"<div style='text-align:center; color:#00c6ff; font-weight:bold; margin-top:5px;'>{selected_photo['caption']}</div>", unsafe_allow_html=True)
-    except Exception as e:
-        # 2차 시도: 1차가 실패할 경우 깃허브 저장소 원본 주소(Raw Link)로 우회하여 강제 렌더링
+        st.markdown(f"### {T['photo']}")
+        
+        # 🔗 깃허브 통합 연동을 위한 올림픽 이미지 실제 파일명 맵
+        gallery_images = [
+            {"path": "skimo_race_1.jpg", "caption": "❄️ 눈보라를 뚫고 올라가는 한계 극복의 업힐 레이스"},
+            {"path": "skimo_race_2.jpg", "caption": "🏅 오륜기 마크 앞에서 펼쳐지는 치열한 선두권 경쟁"},
+            {"path": "skimo_race_3.jpg", "caption": "🎉 꿈의 무대, 올림픽 포디움에 선 영광의 메달리스트들"}
+        ]
+        
+        # 유저가 조작할 수 있는 라디오 인터페이스
+        photo_idx = st.radio("📸 사진 선택", [1, 2, 3], horizontal=True, label_visibility="collapsed")
+        selected_photo = gallery_images[photo_idx - 1]
+        
+        # 깃허브 웹 환경과 로컬 환경 어디서든 100% 사진이 뜨도록 설계된 2중 안전 장치
+        try:
+            # 1차 시도: 영문 이름으로 매칭된 로컬/서버 내 파일 직접 로드
+            st.image(selected_photo["path"], use_container_width=True)
+            st.caption(f"<div style='text-align:center; color:#00c6ff; font-weight:bold; margin-top:5px;'>{selected_photo['caption']}</div>", unsafe_allow_html=True)
+        except Exception as e:
+            # 2차 시도: 1차가 실패할 경우 깃허브 저장소 원본 주소(Raw Link)로 우회하여 강제 렌더링
+            import urllib.parse
+            encoded_filename = urllib.parse.quote(selected_photo["path"])
+            
+            # 💡 pyminno12 님의 실제 깃허브 저장소 주소 구조에 맞게 완벽 하드코딩 매칭했습니다.
+            github_raw_url = f"https://raw.githubusercontent.com/pyminno12/skimo-website/main/{encoded_filename}"
+            
+            try:
+                st.image(github_raw_url, use_container_width=True)
+                st.caption(f"<div style='text-align:center; color:#00c6ff; font-weight:bold; margin-top:5px;'>{selected_photo['caption']}</div>", unsafe_allow_html=True)
+            except:
+                st.error("⚠️ 이미지를 불러오지 못했습니다. 깃허브 메인 폴더에 영문 파일명(skimo_race_1.jpg 등)으로 이미지들이 업로드되어 있는지 확인해 주세요.")
         import urllib.parse
         encoded_filename = urllib.parse.quote(selected_photo["path"])
         
