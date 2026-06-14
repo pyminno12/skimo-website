@@ -4,11 +4,11 @@ from datetime import datetime
 import time
 
 # ==========================================
-# 1. 페이지 설정 및 레이아웃 규격 최적화 (centered 스타일 유도)
+# 1. 페이지 설정 및 레이아웃 규격 최적화
 # ==========================================
 st.set_page_config(page_title="SKIMO KOREA", page_icon="🏔️", layout="wide")
 
-# 화면이 너무 거대해지지 않도록 본문 최대 너비를 1200px로 제한하는 핵심 CSS
+# 상단 파란색 라인(border-bottom)을 제거한 UI 스타일 정의
 st.markdown("""
     <style>
     /* -------------------------------------------
@@ -40,9 +40,6 @@ st.markdown("""
         display: none !important;
     }
     
-    /* -------------------------------------------
-       [핵심 수정] 100% 비율에서 화면이 너무 커지지 않게 제한
-    ------------------------------------------- */
     .block-container {
         padding-top: 0rem;
         padding-bottom: 3rem;
@@ -57,9 +54,9 @@ st.markdown("""
         padding: 0 20px;
     }
     
+    /* [수정] border-bottom 속성을 삭제하여 푸른색 라인을 없앰 */
     .custom-header-bg {
         background-color: #0f2027;
-        border-bottom: 2px solid #00c6ff;
         width: 100%;
     }
     
@@ -77,13 +74,13 @@ st.markdown("""
         color: #00c6ff;
     }
     
-    /* 웅장하지만 부담스럽지 않은 아담한 크기의 히어로 배너 */
+    /* 아담하고 눈이 편안한 크기의 히어로 배너 */
     .hero-bg {
         background-size: cover;
         width: 100%;
     }
     .hero-section {
-        height: 260px; /* 높이를 380px -> 260px로 줄여 컴팩트하게 변경 */
+        height: 260px;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -163,7 +160,7 @@ for lang in ["FR", "IT", "ZH", "JA"]:
         LOCALIZED_TEXT[lang] = LOCALIZED_TEXT["EN"]
 
 # ==========================================
-# 3. 상단 레이아웃 배치 (중앙 제한 wrapper 적용)
+# 3. 상단 레이아웃 배치
 # ==========================================
 st.markdown('<div class="custom-header-bg">', unsafe_allow_html=True)
 st.markdown('<div class="centered-wrapper">', unsafe_allow_html=True)
@@ -200,7 +197,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 4. 히어로 배너 영역 (중앙 제한 wrapper 적용으로 눈이 편안함)
+# 4. 히어로 배너 영역
 # ==========================================
 BG_IMAGES = [
     "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80",  
@@ -231,7 +228,6 @@ if "athletes" not in st.session_state:
         {"BIB": "103", "Name": "Chloe", "Team": "FRANCE", "Status": "RACING", "CP1": "10:16:55", "CP2": "10:49:30", "Penalty": "None"},
     ]
 
-# 모든 본문 내용을 1200px 감싸개로 묶어 좌우 여백을 균형 있게 자동 조절
 st.markdown('<div class="centered-wrapper"><div class="content-box">', unsafe_allow_html=True)
 
 if search_query:
@@ -253,7 +249,7 @@ if menu_index == 0:
         * **Sanctioned by:** ISMF
         * **Scale:** 3,000+ Participants
         """)
-        st.success("🎯 **Resolution Optimized**\n100% 비율에서 한눈에 들어오는 가독성 중심 그리드가 적용되었습니다.")
+        st.success("🎯 **Layout Refined**\n상단 구분선이 제거되어 상단바와 배너 이미지가 매끄럽게 어우러집니다.")
         
     with col_video:
         st.markdown(f"### {T['video']}")
@@ -288,7 +284,7 @@ if menu_index == 0:
             except:
                 st.error("⚠️ 이미지를 불러오지 못했습니다.")
 
-    # 📰 NEWS & STORIES 세로 리스트 구조
+    # 📰 NEWS & STORIES
     st.markdown("---")
     st.header(T["news_title"])
     
