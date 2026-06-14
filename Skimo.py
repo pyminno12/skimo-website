@@ -85,7 +85,7 @@ st.markdown("""
     .hero-subtitle { font-size: 18px; text-shadow: 2px 2px 4px rgba(0,0,0,0.6); color: #00c6ff; }
     
     /* 5. 콘텐츠 컨테이너 크기 제한 */
-    .content-box { max-width: 1350px; margin: 0 auto; padding: 30px 20px; }
+    .content-box { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
     
     /* 6. 뉴스 카드 컴포넌트 */
     .news-card {
@@ -115,7 +115,7 @@ LOCALIZED_TEXT = {
         "subtitle": "올림픽 정식 종목 공인 · 스키등산 세계선수권 대회",
         "menu": ["대회 홈", "선수 참가 신청", "실시간 리더보드 (LIVE)", "🔐 심판/관리자 패널"],
         "desc": "본 대회는 국제산악스키연맹(ISMF) 규정을 준수하며, 필드 심판 시스템과 동기화되어 실시간 기록을 전 세계에 생중계합니다.",
-        "video": "📺 경기 룰 안내 영상", "photo": "📸 올림픽 현장 갤러리", "pay": "💳 참가 신청 및 안전 결제",
+        "video": "📺 경기 룰 안내 영상", "intro_video": "⛷️ 산악스키 종목 소개", "photo": "📸 올림픽 현장 갤러리", "pay": "💳 참가 신청 및 안전 결제",
         "news_title": "📰 News & Stories (최신 소식)", "news_tag": "대회 뉴스"
     },
     "EN": {
@@ -123,7 +123,7 @@ LOCALIZED_TEXT = {
         "subtitle": "Official Olympic Sport · International Skimo Portal",
         "menu": ["Home", "Athlete Registration", "Live Leaderboard", "🔐 Judge/Admin Panel"],
         "desc": "This tournament complies with ISMF regulations. Scoring and penalties are aggregated in real-time globally via the field web app.",
-        "video": "📺 Skimo Rules Video", "photo": "📸 Olympic Action Gallery", "pay": "💳 Register & Secure Pay",
+        "video": "📺 Skimo Rules Video", "intro_video": "⛷️ What is Skimo?", "photo": "📸 Olympic Action Gallery", "pay": "💳 Register & Secure Pay",
         "news_title": "📰 News & Stories", "news_tag": "Official News"
     },
     "FR": {
@@ -131,7 +131,7 @@ LOCALIZED_TEXT = {
         "subtitle": "Sport Olympique Officiel · Portail International de Skimo",
         "menu": ["Accueil", "Inscription Athlète", "Tableau Live", "🔐 Panneau des Juges"],
         "desc": "Ce tournoi est conforme aux règlements de l'ISMF. Les scores sont agrégés en temps réel via l'application mobile des juges.",
-        "video": "📺 Vidéo des Règles", "photo": "📸 Galerie d'Action Olympique", "pay": "💳 S'inscrire et Payer",
+        "video": "📺 Vidéo des Règles", "intro_video": "⛷️ Qu'est-ce que le Skimo?", "photo": "📸 Galerie d'Action Olympique", "pay": "💳 S'inscrire et Payer",
         "news_title": "📰 Actualités & Histoires", "news_tag": "Infos Officielles"
     },
     "IT": {
@@ -139,7 +139,7 @@ LOCALIZED_TEXT = {
         "subtitle": "Sport Olimpico Ufficiale · Portale Internazionale Sci Alpinismo",
         "menu": ["Home", "Iscrizione Atleta", "Classifica Live", "🔐 Pannello Giudici"],
         "desc": "Questo torneo è conforme ai regolamenti ISMF. I punteggi vengono aggregati in tempo real tramite l'app dei giudici.",
-        "video": "📺 Video Regolamento", "photo": "📸 Galleria Azione Olimpiadi", "pay": "💳 Iscriviti e Paga",
+        "video": "📺 Video Regolamento", "intro_video": "⛷️ Cos'è lo Skimo?", "photo": "📸 Galleria Azione Olimpiadi", "pay": "💳 Iscriviti e Paga",
         "news_title": "📰 Notizie & Storie", "news_tag": "Notizie Ufficiali"
     },
     "ZH": {
@@ -147,7 +147,7 @@ LOCALIZED_TEXT = {
         "subtitle": "奥运会正式项目认证 · 登山滑雪国际门户网站",
         "menu": ["大会主页", "运动员报名", "实时排行榜", "🔐 裁判/管理员"],
         "desc": "本次比赛遵守 ISMF 规定。评分 and 处罚将通过现场裁判의 移动网络应用实时在全球范围内汇总。",
-        "video": "📺 赛事规则视频", "photo": "📸 奥运会现场画廊", "pay": "💳 安全支付并确认",
+        "video": "📺 赛事规则视频", "intro_video": "⛷️ 什么是滑雪登山?", "photo": "📸 奥运会现场画廊", "pay": "💳 安全支付并确认",
         "news_title": "📰 新闻与故事", "news_tag": "官方新闻"
     },
     "JA": {
@@ -155,7 +155,7 @@ LOCALIZED_TEXT = {
         "subtitle": "オリンピック正式種目公認 · 山岳スキー国際ポータル",
         "menu": ["ホーム", "選手参加申し込み", "リアルタイム順位表", "🔐 審判/管理者"],
         "desc": "本大会はISMF規定에 준거해 있습니다. 스코어 및 페널ティ는 현지 심판의 앱을 통해 실시간으로 집계됩니다.",
-        "video": "📺 競技ルール動画", "photo": "📸 オリンピック写真館", "pay": "💳 安全な決済と確定",
+        "video": "📺 競技ルール動画", "intro_video": "⛷️ 山岳スキーとは？", "photo": "📸 オリンピック写真館", "pay": "💳 安全な決済と確定",
         "news_title": "📰 ニュース＆ストーリー", "news_tag": "公式ニュース"
     }
 }
@@ -214,37 +214,38 @@ st.markdown('<div class="content-box">', unsafe_allow_html=True)
 # --- [콘텐츠 분기 1] 대회 홈 화면 ---
 if menu_index == 0:
     st.header("🏁 Upcoming Events & Overview")
-    col_text, col_video, col_photo = st.columns([4, 4, 4])
+    
+    # [수정] 4단 분할 레이아웃 적용 (개요, 룰 안내 영상, 종목 소개 영상, 이미지 갤러리)
+    col_text, col_video, col_intro, col_photo = st.columns([3, 3, 3, 3])
     
     with col_text:
         st.markdown(f"### 📢 Information")
         st.write(T["desc"])
         st.markdown("""
-        * **Location:** Pyeongchang / Jeongseon, Gangwon, KOREA
-        * **Sanctioned by:** International Ski Mountaineering Federation (ISMF)
-        * **Expected Scale:** 3,000+ Global Participants & Winter Festivals
+        * **Location:** Pyeongchang, KOREA
+        * **Sanctioned by:** ISMF
+        * **Scale:** 3,000+ Participants
         """)
-        st.info("🖼️ **Gallery Updated**\nBroken image links have been completely replaced with a dynamic Olympic Skimo high-res gallery.")
+        st.success("🎥 **Dual Video Enabled**\nRules & introduction videos are now displayed side-by-side.")
         
     with col_video:
         st.markdown(f"### {T['video']}")
         st.video("https://youtu.be/KgyX5OjMTyM?si=Uu8mCwLV2X4an8Wk")
 
+    with col_intro:
+        # [추가] 사용자가 요청한 산악스키 소개 유튜브 비디오 탑재
+        st.markdown(f"### {T['intro_video']}")
+        st.video("https://youtu.be/nLjES8kuFRg?si=xu3P1kuKedFOdjRl")
+
     with col_photo:
         st.markdown(f"### {T['photo']}")
-        
-        # [치명적 문제 해결] 깨진 이미지 링크 청산 및 고화질 산악스키 현장 갤러리 구축
         gallery_images = [
-            {"url": "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=600&q=80", "caption": "⛷️ 스키등산(Skimo) 선수의 역동적인 업힐 레이스"},
+            {"url": "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=600&q=80", "caption": "⛷️ 스키등산(Skimo) 선수의 업힐 레이스"},
             {"url": "https://images.unsplash.com/photo-1605548230624-8d2d0419c517?auto=format&fit=crop&w=600&q=80", "caption": "🏔️ 끝없이 펼쳐진 설산을 가르는 스키어"},
-            {"url": "https://images.unsplash.com/photo-1517176118179-65244903d13c?auto=format&fit=crop&w=600&q=80", "caption": "💨 광활한 동계 올림픽 규격 슬로프 다운힐 주행"}
+            {"url": "https://images.unsplash.com/photo-1517176118179-65244903d13c?auto=format&fit=crop&w=600&q=80", "caption": "💨 동계 올림픽 슬로프 다운힐 주행"}
         ]
-        
-        # 슬라이더 형태로 사진을 넘겨볼 수 있는 직관적인 내비게이터 추가
         photo_idx = st.radio("📸 사진 선택", [1, 2, 3], horizontal=True, label_visibility="collapsed")
         selected_photo = gallery_images[photo_idx - 1]
-        
-        # 고화질 이미지 및 깔끔한 하단 캡션 출력
         st.image(selected_photo["url"], use_container_width=True)
         st.caption(f"<div style='text-align:center; color:#00c6ff; font-weight:bold; margin-top:5px;'>{selected_photo['caption']}</div>", unsafe_allow_html=True)
 
