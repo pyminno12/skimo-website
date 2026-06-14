@@ -211,11 +211,13 @@ if "athletes" not in st.session_state:
 
 st.markdown('<div class="content-box">', unsafe_allow_html=True)
 
-# --- [콘텐츠 분기 1] 대회 홈 화면 ---
+# -------------------------------------------------------------------------
+# [콘텐츠 분기 1] 대회 홈 화면
+# -------------------------------------------------------------------------
 if menu_index == 0:
     st.header("🏁 Upcoming Events & Overview")
     
-    # 4단 분할 레이아웃 유지 (개요, 룰 안내 영상, 종목 소개 영상, 이미지 갤러리)
+    # 4단 분할 레이아웃 (개요, 룰 안내 영상, 종목 소개 영상, 이미지 갤러리)
     col_text, col_video, col_intro, col_photo = st.columns([3, 3, 3, 3])
     
     with col_text:
@@ -239,84 +241,68 @@ if menu_index == 0:
     with col_photo:
         st.markdown(f"### {T['photo']}")
         
-        # 🔗 깃허브 통합 연동을 위한 올림픽 이미지 실제 파일명 맵
         gallery_images = [
             {"path": "skimo_race_1.jpg", "caption": "❄️ 눈보라를 뚫고 올라가는 한계 극복의 업힐 레이스"},
             {"path": "skimo_race_2.jpg", "caption": "🏅 오륜기 마크 앞에서 펼쳐지는 치열한 선두권 경쟁"},
             {"path": "skimo_race_3.jpg", "caption": "🎉 꿈의 무대, 올림픽 포디움에 선 영광의 메달리스트들"}
         ]
         
-        # 유저가 조작할 수 있는 라디오 인터페이스
         photo_idx = st.radio("📸 사진 선택", [1, 2, 3], horizontal=True, label_visibility="collapsed")
         selected_photo = gallery_images[photo_idx - 1]
         
-        # 깃허브 웹 환경과 로컬 환경 어디서든 100% 사진이 뜨도록 설계된 2중 안전 장치
         try:
-            # 1차 시도: 영문 이름으로 매칭된 로컬/서버 내 파일 직접 로드
             st.image(selected_photo["path"], use_container_width=True)
             st.caption(f"<div style='text-align:center; color:#00c6ff; font-weight:bold; margin-top:5px;'>{selected_photo['caption']}</div>", unsafe_allow_html=True)
         except Exception as e:
-            # 2차 시도: 1차가 실패할 경우 깃허브 저장소 원본 주소(Raw Link)로 우회하여 강제 렌더링
             import urllib.parse
             encoded_filename = urllib.parse.quote(selected_photo["path"])
-            
-            # 💡 pyminno12 님의 실제 깃허브 저장소 주소 구조에 맞게 완벽 하드코딩 매칭했습니다.
             github_raw_url = f"https://raw.githubusercontent.com/pyminno12/skimo-website/main/{encoded_filename}"
-            
             try:
                 st.image(github_raw_url, use_container_width=True)
                 st.caption(f"<div style='text-align:center; color:#00c6ff; font-weight:bold; margin-top:5px;'>{selected_photo['caption']}</div>", unsafe_allow_html=True)
             except:
-                st.error("⚠️ 이미지를 불러오지 못했습니다. 깃허브 메인 폴더에 영문 파일명(skimo_race_1.jpg 등)으로 이미지들이 업로드되어 있는지 확인해 주세요.")
-        import urllib.parse
-        encoded_filename = urllib.parse.quote(selected_photo["path"])
-        
-        # 💡 [필독] 현재 사용 중인 깃허브 주소 구조에 맞춰 자동으로 다운로드 경로를 동적 매핑합니다.
-        github_raw_url = f"https://raw.githubusercontent.com/skimo-website/main/{encoded_filename}"
-        
-        try:
-            st.image(github_raw_url, use_container_width=True)
-            st.caption(f"<div style='text-align:center; color:#00c6ff; font-weight:bold; margin-top:5px;'>{selected_photo['caption']}</div>", unsafe_allow_html=True)
-        except:
-            st.error("⚠️ 이미지를 불러오지 못했습니다. 깃허브 메인 폴더에 영문 파일명(skimo_race_1.jpg 등)으로 이미지들이 업로드되어 있는지 확인해 주세요.")    # NEWS & STORIES 섹션
+                st.error("⚠️ 이미지를 불러오지 못했습니다. 파일명을 다시 한번 체크해 주세요.")
+
+    # 📰 [완벽 복구] NEWS & STORIES 섹션 위치 정렬 보정
     st.markdown("---")
     st.header(T["news_title"])
-    n_col1, n_col2, n_col3 = st.columns(3)
     
-    with n_col1:
-        st.markdown(f"""
-        <div class="news-card">
-            <img class="news-img" src="https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=500&q=80">
-            <div class="news-body">
-                <div class="news-headline">French Alps 2030 proposal marks major milestone for ski mountaineering</div>
-                <div class="news-meta">📅 June 9, 2026<br><span class="news-tag"># {T["news_tag"]} # Olympics</span></div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+    news_items = [
+        {
+            "title": "French Alps 2030 proposal marks major milestone for ski mountaineering",
+            "date": "🗓️ June 9, 2026",
+            "tag": f"# {T['news_tag']} # Olympics",
+            "img": "skimo_race_1.jpg"
+        },
+        {
+            "title": "ISMF Releases Provisional 2026/27 International Calendar",
+            "date": "🗓️ June 3, 2026",
+            "tag": f"# {T['news_tag']} # Competitions",
+            "img": "skimo_race_2.jpg"
+        },
+        {
+            "title": "Looking Ahead: Key Olympic Qualification Moments in June",
+            "date": "🗓️ May 29, 2026",
+            "tag": f"# {T['news_tag']} # RoadToMilano",
+            "img": "skimo_race_3.jpg"
+        }
+    ]
+    
+    n_cols = st.columns(3)
+    for idx, item in enumerate(news_items):
+        with n_cols[idx]:
+            try:
+                st.image(item["img"], use_container_width=True)
+            except:
+                github_raw_url = f"https://raw.githubusercontent.com/pyminno12/skimo-website/main/{item['img']}"
+                st.image(github_raw_url, use_container_width=True)
+                
+            st.markdown(f"#### {item['title']}")
+            st.caption(f"<span style='color:#9aa0a6;'>{item['date']}</span> &nbsp;&nbsp; <span style='color:#00c6ff; font-weight:bold;'>{item['tag']}</span>", unsafe_allow_html=True)
 
-    with n_col2:
-        st.markdown(f"""
-        <div class="news-card">
-            <img class="news-img" src="https://images.unsplash.com/photo-1614531341773-3bef8ca0da3b?auto=format&fit=crop&w=500&q=80">
-            <div class="news-body">
-                <div class="news-headline">ISMF Releases Provisional 2026/27 International Calendar</div>
-                <div class="news-meta">📅 June 3, 2026<br><span class="news-tag"># {T["news_tag"]} # Competitions</span></div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with n_col3:
-        st.markdown(f"""
-        <div class="news-card">
-            <img class="news-img" src="https://images.unsplash.com/photo-1482867996988-2faec3cbb4f9?auto=format&fit=crop&w=500&q=80">
-            <div class="news-body">
-                <div class="news-headline">Looking Ahead: Key Olympic Qualification Moments in June</div>
-                <div class="news-meta">📅 May 29, 2026<br><span class="news-tag"># {T["news_tag"]} # RoadToMilano</span></div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-# --- [콘텐츠 분기 2] 선수 참가 신청 ---
+# -------------------------------------------------------------------------
+# [콘텐츠 분기 2] 선수 참가 신청
+# -------------------------------------------------------------------------
 elif menu_index == 1:
     st.header(LOCALIZED_TEXT["KO"]["menu"][1])
     with st.form("global_reg_form"):
@@ -330,13 +316,17 @@ elif menu_index == 1:
             st.session_state.athletes.append(new_member)
             st.success("Registration Successful!")
 
-# --- [콘텐츠 분기 3] 실시간 리더보드 ---
+# -------------------------------------------------------------------------
+# [콘텐츠 분기 3] 실시간 리더보드
+# -------------------------------------------------------------------------
 elif menu_index == 2:
     st.header(LOCALIZED_TEXT["KO"]["menu"][2])
     df = pd.DataFrame(st.session_state.athletes)
     st.dataframe(df.set_index("BIB"), use_container_width=True)
 
-# --- [콘텐츠 분기 4] 심판 패널 ---
+# -------------------------------------------------------------------------
+# [콘텐츠 분기 4] 심판 패널
+# -------------------------------------------------------------------------
 elif menu_index == 3:
     st.header(LOCALIZED_TEXT["KO"]["menu"][3])
     st.info("System operational. Field telemetry bridge secure.")
