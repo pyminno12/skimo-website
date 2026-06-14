@@ -8,60 +8,84 @@ import time
 # ==========================================
 st.set_page_config(page_title="SKIMO KOREA", page_icon="🏔️", layout="wide")
 
-# 상단 파란색 라인(border-bottom)을 제거한 UI 스타일 정의
-st.markdown("""
+# 배경 이미지 링크 매핑 (선택된 메뉴에 따라 유동적으로 변화)
+BG_IMAGES = [
+    "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80",  
+    "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=1800&q=80",  
+    "https://images.unsplash.com/photo-1614531341773-3bef8ca0da3b?auto=format&fit=crop&w=1800&q=80",  
+    "https://images.unsplash.com/photo-1482867996988-2faec3cbb4f9?auto=format&fit=crop&w=1800&q=80"   
+]
+
+# 현재 활성화된 메뉴 인덱스를 미리 파악하기 위해 세션 구조 설정
+if "menu_idx" not in st.session_state:
+    st.session_state.menu_idx = 0
+
+selected_bg = BG_IMAGES[st.session_state.menu_idx]
+
+# 전체 화면 배경 스타일 및 컴포넌트 커스텀 CSS 적용
+st.markdown(f"""
     <style>
     /* -------------------------------------------
        [기본 바 완전 제거] 스트림릿 기본 상단 바 제거
     ------------------------------------------- */
-    header[data-testid="stHeader"] {
+    header[data-testid="stHeader"] {{
         display: none !important;
-    }
-    .stAppDeployDropdown {
+    }}
+    .stAppDeployDropdown {{
         display: none !important;
-    }
+    }}
     
     /* -------------------------------------------
        마우스 커서 텍스트 입력창 변환 방지 규칙
     ------------------------------------------- */
-    div[data-testid="stSelectbox"] div[role="combobox"] {
+    div[data-testid="stSelectbox"] div[role="combobox"] {{
         cursor: pointer !important;
-    }
-    div[data-testid="stSelectbox"] input {
+    }}
+    div[data-testid="stSelectbox"] input {{
         cursor: pointer !important;
         caret-color: transparent !important;
-    }
-    div[data-baseweb="popover"] li {
+    }}
+    div[data-baseweb="popover"] li {{
         cursor: pointer !important;
-    }
+    }}
 
     /* 스트림릿 기본 사이드바 숨기기 및 본문 패딩 제로화 */
-    [data-testid="stSidebar"] {
+    [data-testid="stSidebar"] {{
         display: none !important;
-    }
+    }}
     
-    .block-container {
+    .block-container {{
         padding-top: 0rem;
-        padding-bottom: 3rem;
+        padding-bottom: 0rem;
         padding-left: 0rem;
         padding-right: 0rem;
-    }
+    }}
     
-    /* 상단바와 본문 내용이 들어갈 중앙 정렬 컨테이너 (최대 1200px 제한) */
-    .centered-wrapper {
+    /* -------------------------------------------
+       [핵심 수정] 웹사이트 전체를 감싸는 산악 배경화면 설정
+    ------------------------------------------- */
+    .stApp {{
+        background: linear-gradient(rgba(15, 32, 39, 0.85), rgba(44, 83, 100, 0.75)), url('{selected_bg}') no-repeat center center fixed;
+        background-size: cover !important;
+    }}
+    
+    /* 중앙 정렬 컨테이너 규격 (최대 1200px 제한) */
+    .centered-wrapper {{
         max-width: 1200px;
         margin: 0 auto;
         padding: 0 20px;
-    }
+    }}
     
-    /* [수정] border-bottom 속성을 삭제하여 푸른색 라인을 없앰 */
-    .custom-header-bg {
-        background-color: #0f2027;
+    /* 상단 투명 네비게이션 바 배경 */
+    .custom-header-bg {{
+        background-color: rgba(15, 32, 39, 0.4);
+        backdrop-filter: blur(5px);
         width: 100%;
-    }
+        padding: 10px 0;
+    }}
     
     /* 우측 상단 메뉴 텍스트 스타일 */
-    .right-nav-item {
+    .right-nav-item {{
         color: #ffffff;
         font-size: 14px;
         font-weight: 500;
@@ -69,60 +93,69 @@ st.markdown("""
         margin-left: 20px;
         cursor: pointer;
         transition: color 0.2s;
-    }
-    .right-nav-item:hover {
+    }}
+    .right-nav-item:hover {{
         color: #00c6ff;
-    }
+    }}
     
-    /* 아담하고 눈이 편안한 크기의 히어로 배너 */
-    .hero-bg {
-        background-size: cover;
-        width: 100%;
-    }
-    .hero-section {
-        height: 260px;
+    /* 깔끔하고 컴팩트한 타이틀 섹션 */
+    .hero-section {{
+        height: 180px;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         color: white;
         text-align: center;
-    }
-    .hero-title { font-size: 36px; font-weight: 800; text-shadow: 3px 3px 6px rgba(0,0,0,0.8); margin-bottom: 8px; letter-spacing: 1px; }
-    .hero-subtitle { font-size: 16px; font-weight: 500; text-shadow: 2px 2px 4px rgba(0,0,0,0.6); color: #00c6ff; }
+    }}
+    .hero-title {{ font-size: 42px; font-weight: 800; text-shadow: 3px 3px 8px rgba(0,0,0,0.9); margin-bottom: 5px; letter-spacing: 1px; }}
+    .hero-subtitle {{ font-size: 18px; font-weight: 500; text-shadow: 2px 2px 4px rgba(0,0,0,0.7); color: #00c6ff; }}
     
-    /* 본문 영역 마진 스페이스 */
-    .content-box { 
+    /* -------------------------------------------
+       [핵심 수정] 하단 설명 레이아웃까지 배경이 투명하게 비치는 글래스모피즘 컨테이너
+    ------------------------------------------- */
+    .content-box {{ 
         max-width: 1200px; 
-        margin: 0 auto; 
-        padding: 25px 0px; 
-    }
+        margin: 0 auto 50px auto; 
+        padding: 30px; 
+        background: rgba(255, 255, 255, 0.07);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+    }}
+    
+    /* 하단 글래스 박스 안의 텍스트 및 헤더 가독성 확보 */
+    .content-box h1, .content-box h2, .content-box h3, .content-box p, .content-box li {{
+        color: #ffffff !important;
+    }}
     
     /* 리스트형 뉴스 레이아웃 스타일 */
-    .news-list-item {
+    .news-list-item {{
         padding: 14px 15px;
-        border-bottom: 1px solid #e2e8f0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
         display: flex;
         justify-content: space-between;
         align-items: center;
-    }
-    .news-list-item:last-child {
+    }}
+    .news-list-item:last-child {{
         border-bottom: none;
-    }
-    .news-list-title {
+    }}
+    .news-list-title {{
         font-size: 15px;
         font-weight: 500;
-        color: #1e293b;
+        color: #e2e8f0;
         text-decoration: none;
-    }
-    .news-list-title:hover {
+    }}
+    .news-list-title:hover {{
         color: #00c6ff;
-    }
-    .news-list-meta {
+    }}
+    .news-list-meta {{
         font-size: 13px;
-        color: #64748b;
+        color: #cbd5e1;
         white-space: nowrap;
-    }
+    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -168,16 +201,17 @@ st.markdown('<div class="centered-wrapper">', unsafe_allow_html=True)
 c_menu, c_search, c_right = st.columns([3, 4, 5])
 
 with c_menu:
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
     selected_menu_raw = st.selectbox("Menu Select", list(LOCALIZED_TEXT["KO"]["menu"]), label_visibility="collapsed")
     menu_index = LOCALIZED_TEXT["KO"]["menu"].index(selected_menu_raw)
+    # 선택된 메뉴 인덱스를 세션에 저장하여 동적 배경 즉각 연동
+    if st.session_state.menu_idx != menu_index:
+        st.session_state.menu_idx = menu_index
+        st.rerun()
     
 with c_search:
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
     search_query = st.text_input("Search", placeholder=LOCALIZED_TEXT["KO"]["search_holder"], label_visibility="collapsed")
     
 with c_right:
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
     sub_lang, sub_buttons = st.columns([4, 6])
     with sub_lang:
         selected_lang_name = st.selectbox("Global Select", list(LANG_DICT.keys()), label_visibility="collapsed")
@@ -197,23 +231,13 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 4. 히어로 배너 영역
+# 4. 히어로 타이틀 영역 (배경을 제거하여 전체 화면 산과 병합)
 # ==========================================
-BG_IMAGES = [
-    "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80",  
-    "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=1800&q=80",  
-    "https://images.unsplash.com/photo-1614531341773-3bef8ca0da3b?auto=format&fit=crop&w=1800&q=80",  
-    "https://images.unsplash.com/photo-1482867996988-2faec3cbb4f9?auto=format&fit=crop&w=1800&q=80"   
-]
-selected_bg = BG_IMAGES[menu_index]
-
 st.markdown(f"""
-    <div class="hero-bg" style="background: linear-gradient(rgba(15, 32, 39, 0.75), rgba(44, 83, 100, 0.5)), url('{selected_bg}') no-repeat center center;">
-        <div class="centered-wrapper">
-            <div class="hero-section">
-                <div class="hero-title">{T["title"]}</div>
-                <div class="hero-subtitle">🏔️ {T["subtitle"]}</div>
-            </div>
+    <div class="centered-wrapper">
+        <div class="hero-section">
+            <div class="hero-title">{T["title"]}</div>
+            <div class="hero-subtitle">🏔️ {T["subtitle"]}</div>
         </div>
     </div>
 """, unsafe_allow_html=True)
@@ -228,7 +252,8 @@ if "athletes" not in st.session_state:
         {"BIB": "103", "Name": "Chloe", "Team": "FRANCE", "Status": "RACING", "CP1": "10:16:55", "CP2": "10:49:30", "Penalty": "None"},
     ]
 
-st.markdown('<div class="centered-wrapper"><div class="content-box">', unsafe_allow_html=True)
+# [수정] 반투명 글래스 컨테이너 시작
+st.markdown('<div class="content-box">', unsafe_allow_html=True)
 
 if search_query:
     st.info(f"🔍 '{search_query}'에 대한 포털 내 실시간 검색 결과 매칭 중...")
@@ -237,7 +262,7 @@ if search_query:
 # [콘텐츠 분기 1] 대회 홈 화면
 # -------------------------------------------------------------------------
 if menu_index == 0:
-    st.header("🏁 Upcoming Events & Overview")
+    st.markdown("## 🏁 Upcoming Events & Overview")
     
     col_text, col_video, col_intro, col_photo = st.columns([3, 3, 3, 3])
     
@@ -249,7 +274,7 @@ if menu_index == 0:
         * **Sanctioned by:** ISMF
         * **Scale:** 3,000+ Participants
         """)
-        st.success("🎯 **Layout Refined**\n상단 구분선이 제거되어 상단바와 배너 이미지가 매끄럽게 어우러집니다.")
+        st.success("✨ **Skin Redesigned**\nISMF 공식 홈페이지처럼 광활한 만년설 산악 배경이 중앙과 하단 콘텐츠 영역까지 전체적으로 부드럽게 흐르도록 통합되었습니다.")
         
     with col_video:
         st.markdown(f"### {T['video']}")
@@ -285,8 +310,8 @@ if menu_index == 0:
                 st.error("⚠️ 이미지를 불러오지 못했습니다.")
 
     # 📰 NEWS & STORIES
-    st.markdown("---")
-    st.header(T["news_title"])
+    st.markdown("<hr style='border-color: rgba(255,255,255,0.15);'>", unsafe_allow_html=True)
+    st.markdown(f"## {T['news_title']}")
     
     news_items = [
         {
@@ -306,7 +331,7 @@ if menu_index == 0:
         }
     ]
     
-    st.markdown("<div style='background-color: #f8fafc; padding: 10px 20px; border-radius: 8px; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
+    st.markdown("<div style='background-color: rgba(255, 255, 255, 0.05); padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
     for item in news_items:
         st.markdown(f"""
             <div class="news-list-item">
@@ -320,7 +345,7 @@ if menu_index == 0:
 # [콘텐츠 분기 2] 선수 참가 신청
 # -------------------------------------------------------------------------
 elif menu_index == 1:
-    st.header(LOCALIZED_TEXT["KO"]["menu"][1])
+    st.markdown(f"## {LOCALIZED_TEXT['KO']['menu'][1]}")
     with st.form("global_reg_form"):
         p_name = st.text_input("Name")
         p_nation = st.text_input("Nationality")
@@ -336,7 +361,7 @@ elif menu_index == 1:
 # [콘텐츠 분기 3] 실시간 리더보드
 # -------------------------------------------------------------------------
 elif menu_index == 2:
-    st.header(LOCALIZED_TEXT["KO"]["menu"][2])
+    st.markdown(f"## {LOCALIZED_TEXT['KO']['menu'][2]}")
     df = pd.DataFrame(st.session_state.athletes)
     st.dataframe(df.set_index("BIB"), use_container_width=True)
 
@@ -344,7 +369,7 @@ elif menu_index == 2:
 # [콘텐츠 분기 4] 심판 패널
 # -------------------------------------------------------------------------
 elif menu_index == 3:
-    st.header(LOCALIZED_TEXT["KO"]["menu"][3])
+    st.markdown(f"## {LOCALIZED_TEXT['KO']['menu'][3]}")
     st.info("System operational. Field telemetry bridge secure.")
 
-st.markdown('</div></div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True) # 반투명 글래스 컨테이너 끝
