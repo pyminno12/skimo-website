@@ -8,7 +8,7 @@ import time
 # ==========================================
 st.set_page_config(page_title="ISMF Korea Global Portal", page_icon="🏔️", layout="wide")
 
-# 사이드바/시스템 바 제거 및 마우스 커서 교정, [로고 테두리 제거]를 위한 CSS
+# 사이드바/시스템 바 제거 및 마우스 커서 교정, 로고 테두리 제거를 위한 CSS
 st.markdown("""
     <style>
     /* -------------------------------------------
@@ -56,7 +56,7 @@ st.markdown("""
         border-bottom: 2px solid #00c6ff;
     }
     
-    /* 3. [수정 완료] 로고 마크 스타일링 (푸른색 테두리와 박스 배경 제거) */
+    /* 3. 로고 마크 스타일링 */
     .brand-logo-clean {
         color: white;
         font-size: 16px;
@@ -65,7 +65,7 @@ st.markdown("""
         align-items: center;
         gap: 8px;
         white-space: nowrap;
-        padding: 10px 0px; /* 좌우 패딩을 없애고 정렬 유지 */
+        padding: 10px 0px;
     }
     
     /* 4. 웅장한 히어로 배너 영역 */
@@ -170,7 +170,6 @@ with top_nav_container:
     c_logo, c_menu, c_lang = st.columns([3, 5, 2])
     
     with c_logo:
-        # [수정] 배경색(background-color)과 테두리(border) 속성을 제거하여 글자만 깔끔하게 노출
         st.markdown("<div style='padding-top:5px;'><span class='brand-logo-clean'>🏔️ ISMF NAVIGATION BAR</span></div>", unsafe_allow_html=True)
         
     with c_menu:
@@ -225,7 +224,7 @@ if menu_index == 0:
         * **Sanctioned by:** International Ski Mountaineering Federation (ISMF)
         * **Expected Scale:** 3,000+ Global Participants & Winter Festivals
         """)
-        st.info("✨ **Visual Cleaned**\nLogo borders and box backgrounds have been fully removed for a minimal UI.")
+        st.info("🖼️ **Gallery Updated**\nBroken image links have been completely replaced with a dynamic Olympic Skimo high-res gallery.")
         
     with col_video:
         st.markdown(f"### {T['video']}")
@@ -233,7 +232,21 @@ if menu_index == 0:
 
     with col_photo:
         st.markdown(f"### {T['photo']}")
-        st.image("https://images.unsplash.com/photo-1614531341773-3bef8ca0da3b?auto=format&fit=crop&w=600&q=80", caption="Olympic Athlete")
+        
+        # [치명적 문제 해결] 깨진 이미지 링크 청산 및 고화질 산악스키 현장 갤러리 구축
+        gallery_images = [
+            {"url": "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=600&q=80", "caption": "⛷️ 스키등산(Skimo) 선수의 역동적인 업힐 레이스"},
+            {"url": "https://images.unsplash.com/photo-1605548230624-8d2d0419c517?auto=format&fit=crop&w=600&q=80", "caption": "🏔️ 끝없이 펼쳐진 설산을 가르는 스키어"},
+            {"url": "https://images.unsplash.com/photo-1517176118179-65244903d13c?auto=format&fit=crop&w=600&q=80", "caption": "💨 광활한 동계 올림픽 규격 슬로프 다운힐 주행"}
+        ]
+        
+        # 슬라이더 형태로 사진을 넘겨볼 수 있는 직관적인 내비게이터 추가
+        photo_idx = st.radio("📸 사진 선택", [1, 2, 3], horizontal=True, label_visibility="collapsed")
+        selected_photo = gallery_images[photo_idx - 1]
+        
+        # 고화질 이미지 및 깔끔한 하단 캡션 출력
+        st.image(selected_photo["url"], use_container_width=True)
+        st.caption(f"<div style='text-align:center; color:#00c6ff; font-weight:bold; margin-top:5px;'>{selected_photo['caption']}</div>", unsafe_allow_html=True)
 
     # NEWS & STORIES 섹션
     st.markdown("---")
