@@ -16,7 +16,6 @@ BG_IMAGES = [
     "https://images.unsplash.com/photo-1482867996988-2faec3cbb4f9?auto=format&fit=crop&w=1800&q=80"   
 ]
 
-# 현재 활성화된 메뉴 인덱스를 미리 파악하기 위해 세션 구조 설정
 if "menu_idx" not in st.session_state:
     st.session_state.menu_idx = 0
 
@@ -61,9 +60,7 @@ st.markdown(f"""
         padding-right: 0rem;
     }}
     
-    /* -------------------------------------------
-       [핵심 수정] 웹사이트 전체를 감싸는 산악 배경화면 설정
-    ------------------------------------------- */
+    /* 웹사이트 전체를 감싸는 산악 배경화면 설정 */
     .stApp {{
         background: linear-gradient(rgba(15, 32, 39, 0.85), rgba(44, 83, 100, 0.75)), url('{selected_bg}') no-repeat center center fixed;
         background-size: cover !important;
@@ -98,9 +95,10 @@ st.markdown(f"""
         color: #00c6ff;
     }}
     
-    /* 깔끔하고 컴팩트한 타이틀 섹션 */
+    /* 타이틀 섹션 규격 설정 */
     .hero-section {{
-        height: 180px;
+        padding-top: 40px;
+        padding-bottom: 20px;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -109,11 +107,40 @@ st.markdown(f"""
         text-align: center;
     }}
     .hero-title {{ font-size: 42px; font-weight: 800; text-shadow: 3px 3px 8px rgba(0,0,0,0.9); margin-bottom: 5px; letter-spacing: 1px; }}
-    .hero-subtitle {{ font-size: 18px; font-weight: 500; text-shadow: 2px 2px 4px rgba(0,0,0,0.7); color: #00c6ff; }}
+    .hero-subtitle {{ font-size: 18px; font-weight: 500; text-shadow: 2px 2px 4px rgba(0,0,0,0.7); color: #00c6ff; margin-bottom: 25px; }}
     
     /* -------------------------------------------
-       [핵심 수정] 하단 설명 레이아웃까지 배경이 투명하게 비치는 글래스모피즘 컨테이너
+       [핵심 수정] 연한 회색 테두리를 가진 메인 검색창 컨테이너
     ------------------------------------------- */
+    .main-search-container {{
+        width: 100%;
+        max-width: 800px; /* 너무 퍼지지 않도록 너비 제한 */
+        margin: 0 auto 30px auto;
+        background: rgba(255, 255, 255, 0.08); /* 연한 투명 회색 배경 */
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.25); /* 사진 속 연한 회색 테두리 */
+        border-radius: 50px; /* 둥근 라운드 테두리 */
+        padding: 6px 18px; /* 스트림릿 입력창이 쏙 들어가도록 내부 여백 조절 */
+    }}
+    
+    /* 스트림릿 기본 입력창을 테두리 없는 투명한 스타일로 튜닝 */
+    .main-search-container div[data-testid="stTextInput"] input {{
+        background-color: transparent !important;
+        border: none !important;
+        color: #ffffff !important;
+        font-size: 16px !important;
+    }}
+    .main-search-container div[data-testid="stTextInput"] input::placeholder {{
+        color: rgba(255, 255, 255, 0.6) !important;
+    }}
+    /* 포커스 시 나타나는 기본 파란색 테두리 제거 */
+    .main-search-container div[data-testid="stTextInput"] div {{
+        border: none !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
+    }}
+    
+    /* 하단 설명 레이아웃까지 배경이 투명하게 비치는 글래스모피즘 컨테이너 */
     .content-box {{ 
         max-width: 1200px; 
         margin: 0 auto 50px auto; 
@@ -126,7 +153,6 @@ st.markdown(f"""
         color: #ffffff;
     }}
     
-    /* 하단 글래스 박스 안의 텍스트 및 헤더 가독성 확보 */
     .content-box h1, .content-box h2, .content-box h3, .content-box p, .content-box li {{
         color: #ffffff !important;
     }}
@@ -193,26 +219,22 @@ for lang in ["FR", "IT", "ZH", "JA"]:
         LOCALIZED_TEXT[lang] = LOCALIZED_TEXT["EN"]
 
 # ==========================================
-# 3. 상단 레이아웃 배치
+# 3. 상단 네비게이션 바 레이아웃 (검색창이 제외되어 더 깔끔해짐)
 # ==========================================
 st.markdown('<div class="custom-header-bg">', unsafe_allow_html=True)
 st.markdown('<div class="centered-wrapper">', unsafe_allow_html=True)
 
-c_menu, c_search, c_right = st.columns([3, 4, 5])
+c_menu, c_right = st.columns([4, 8])
 
 with c_menu:
     selected_menu_raw = st.selectbox("Menu Select", list(LOCALIZED_TEXT["KO"]["menu"]), label_visibility="collapsed")
     menu_index = LOCALIZED_TEXT["KO"]["menu"].index(selected_menu_raw)
-    # 선택된 메뉴 인덱스를 세션에 저장하여 동적 배경 즉각 연동
     if st.session_state.menu_idx != menu_index:
         st.session_state.menu_idx = menu_index
         st.rerun()
     
-with c_search:
-    search_query = st.text_input("Search", placeholder=LOCALIZED_TEXT["KO"]["search_holder"], label_visibility="collapsed")
-    
 with c_right:
-    sub_lang, sub_buttons = st.columns([4, 6])
+    sub_lang, sub_buttons = st.columns([4, 8])
     with sub_lang:
         selected_lang_name = st.selectbox("Global Select", list(LANG_DICT.keys()), label_visibility="collapsed")
         current_lang = LANG_DICT[selected_lang_name]
@@ -231,7 +253,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 4. 히어로 타이틀 영역 (배경을 제거하여 전체 화면 산과 병합)
+# 4. 히어로 타이틀 및 중앙 라운드 검색창 배치
 # ==========================================
 st.markdown(f"""
     <div class="centered-wrapper">
@@ -241,6 +263,12 @@ st.markdown(f"""
         </div>
     </div>
 """, unsafe_allow_html=True)
+
+# [수정] SKIMO KOREA 밑 연한 회색 라운드 테두리 박스 스킨 안에 검색 텍스트 필드 쏙 집어넣기
+with st.container():
+    st.markdown('<div class="centered-wrapper"><div class="main-search-container">', unsafe_allow_html=True)
+    search_query = st.text_input("Main Search", placeholder=T["search_holder"], label_visibility="collapsed")
+    st.markdown('</div></div>', unsafe_allow_html=True)
 
 # ==========================================
 # 5. 세션 데이터 및 메인 스페이스 바인딩
@@ -252,7 +280,7 @@ if "athletes" not in st.session_state:
         {"BIB": "103", "Name": "Chloe", "Team": "FRANCE", "Status": "RACING", "CP1": "10:16:55", "CP2": "10:49:30", "Penalty": "None"},
     ]
 
-# [수정] 반투명 글래스 컨테이너 시작
+# 하단 반투명 글래스 컨테이너
 st.markdown('<div class="content-box">', unsafe_allow_html=True)
 
 if search_query:
@@ -274,7 +302,7 @@ if menu_index == 0:
         * **Sanctioned by:** ISMF
         * **Scale:** 3,000+ Participants
         """)
-        st.success("✨ **Skin Redesigned**\nISMF 공식 홈페이지처럼 광활한 만년설 산악 배경이 중앙과 하단 콘텐츠 영역까지 전체적으로 부드럽게 흐르도록 통합되었습니다.")
+        st.success("🎯 **Search Relocated**\n검색창이 타이틀 하단의 라운드 글래스 테두리 안으로 완벽하게 이동 완료되었습니다.")
         
     with col_video:
         st.markdown(f"### {T['video']}")
@@ -372,4 +400,4 @@ elif menu_index == 3:
     st.markdown(f"## {LOCALIZED_TEXT['KO']['menu'][3]}")
     st.info("System operational. Field telemetry bridge secure.")
 
-st.markdown('</div>', unsafe_allow_html=True) # 반투명 글래스 컨테이너 끝
+st.markdown('</div>', unsafe_allow_html=True)
