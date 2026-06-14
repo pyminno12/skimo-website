@@ -8,7 +8,7 @@ import time
 # ==========================================
 st.set_page_config(page_title="ISMF Korea Global Portal", page_icon="🏔️", layout="wide")
 
-# 사이드바/시스템 바 제거 및 [마우스 커서 교정]을 위한 CSS
+# 사이드바/시스템 바 제거 및 마우스 커서 교정, [로고 테두리 제거]를 위한 CSS
 st.markdown("""
     <style>
     /* -------------------------------------------
@@ -23,20 +23,14 @@ st.markdown("""
     
     /* -------------------------------------------
        [치명적 문제 해결 2] 마우스 커서 텍스트 입력창 변환 방지
-       셀렉트 박스 영역을 클릭할 때 일반 마우스(pointer/default)로 강제 고정
     ------------------------------------------- */
-    /* 드롭다운 입력창 전체의 커서를 손가락 모양으로 고정 */
     div[data-testid="stSelectbox"] div[role="combobox"] {
         cursor: pointer !important;
     }
-    
-    /* 입력창 내부 텍스트 영역에서 텍스트 커서(I-beam)가 뜨는 것 차단 */
     div[data-testid="stSelectbox"] input {
         cursor: pointer !important;
-        caret-color: transparent !important; /* 텍스트 깜빡이 커서 숨기기 */
+        caret-color: transparent !important;
     }
-    
-    /* 드롭다운 아래로 펼쳐지는 메뉴 리스트 아이템들도 전부 손가락 커서로 통일 */
     div[data-baseweb="popover"] li {
         cursor: pointer !important;
     }
@@ -62,15 +56,16 @@ st.markdown("""
         border-bottom: 2px solid #00c6ff;
     }
     
-    /* 3. 로고 마크 스타일링 */
-    .brand-logo {
+    /* 3. [수정 완료] 로고 마크 스타일링 (푸른색 테두리와 박스 배경 제거) */
+    .brand-logo-clean {
         color: white;
-        font-size: 20px;
+        font-size: 16px;
         font-weight: bold;
         display: flex;
         align-items: center;
         gap: 8px;
         white-space: nowrap;
+        padding: 10px 0px; /* 좌우 패딩을 없애고 정렬 유지 */
     }
     
     /* 4. 웅장한 히어로 배너 영역 */
@@ -159,7 +154,7 @@ LOCALIZED_TEXT = {
         "title": "ISMF 韓国選手権大会",
         "subtitle": "オリンピック正式種目公認 · 山岳スキー国際ポータル",
         "menu": ["ホーム", "選手参加申し込み", "リアルタイム順位表", "🔐 審判/管理者"],
-        "desc": "本大会はISMF規定에 준거해 있습니다. 스코어 및 페널티는 현지 심판의 앱을 통해 실시간으로 집계됩니다.",
+        "desc": "本大会はISMF規定에 준거해 있습니다. 스코어 및 페널ティ는 현지 심판의 앱을 통해 실시간으로 집계됩니다.",
         "video": "📺 競技ルール動画", "photo": "📸 オリンピック写真館", "pay": "💳 安全な決済と確定",
         "news_title": "📰 ニュース＆ストーリー", "news_tag": "公式ニュース"
     }
@@ -175,7 +170,8 @@ with top_nav_container:
     c_logo, c_menu, c_lang = st.columns([3, 5, 2])
     
     with c_logo:
-        st.markdown("<div style='padding-top:5px;'><span style='background-color:#021b29; padding: 10px 15px; border-radius:5px; border: 1px solid #00c6ff; color:white; font-weight:bold; font-size:15px;'>🏔️ ISMF NAVIGATION BAR</span></div>", unsafe_allow_html=True)
+        # [수정] 배경색(background-color)과 테두리(border) 속성을 제거하여 글자만 깔끔하게 노출
+        st.markdown("<div style='padding-top:5px;'><span class='brand-logo-clean'>🏔️ ISMF NAVIGATION BAR</span></div>", unsafe_allow_html=True)
         
     with c_menu:
         selected_menu_raw = st.selectbox("Menu Select", list(LOCALIZED_TEXT["KO"]["menu"]), label_visibility="collapsed")
@@ -229,7 +225,7 @@ if menu_index == 0:
         * **Sanctioned by:** International Ski Mountaineering Federation (ISMF)
         * **Expected Scale:** 3,000+ Global Participants & Winter Festivals
         """)
-        st.info("🎯 **Cursor Bug Fixed**\nAll navigation selectors are now customized to use standard pointer hand icons.")
+        st.info("✨ **Visual Cleaned**\nLogo borders and box backgrounds have been fully removed for a minimal UI.")
         
     with col_video:
         st.markdown(f"### {T['video']}")
