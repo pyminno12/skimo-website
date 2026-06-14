@@ -6,13 +6,13 @@ import time
 # ==========================================
 # 1. 페이지 설정 및 풀 와이드 CSS 레이아웃 구조 정의
 # ==========================================
-st.set_page_config(page_title="ISMF Korea Global Portal", page_icon="🏔️", layout="wide")
+st.set_page_config(page_title="SKIMO KOREA", page_icon="🏔️", layout="wide")
 
-# 사이드바/시스템 바 제거 및 마우스 커서 교정, 로고 테두리 제거를 위한 CSS
+# 사이드바/시스템 바 제거 및 상단 커스텀 내비게이션 UI 디자인을 위한 CSS
 st.markdown("""
     <style>
     /* -------------------------------------------
-       [치명적 문제 해결 1] 스트림릿 기본 검은색 상단 바 완전 제거
+       [기본 바 완전 제거] 스트림릿 기본 상단 바 제거
     ------------------------------------------- */
     header[data-testid="stHeader"] {
         display: none !important;
@@ -22,7 +22,7 @@ st.markdown("""
     }
     
     /* -------------------------------------------
-       [치명적 문제 해결 2] 마우스 커서 텍스트 입력창 변환 방지
+       마우스 커서 텍스트 입력창 변환 방지 규칙
     ------------------------------------------- */
     div[data-testid="stSelectbox"] div[role="combobox"] {
         cursor: pointer !important;
@@ -35,7 +35,7 @@ st.markdown("""
         cursor: pointer !important;
     }
 
-    /* 1. 스트림릿 기본 사이드바 숨기기 및 본문 패딩 제거 */
+    /* 스트림릿 기본 사이드바 숨기기 및 본문 패딩 제로화 */
     [data-testid="stSidebar"] {
         display: none !important;
     }
@@ -46,29 +46,33 @@ st.markdown("""
         padding-right: 0rem;
     }
     
-    /* 2. 상단 고정형 글로벌 내비게이션 바 레이아웃 */
-    .custom-top-bar {
+    /* -------------------------------------------
+       [피드백 반영] 완전히 새로 컴포즈한 상단 헤더 바 스타일
+    ------------------------------------------- */
+    .custom-header-bar {
         background-color: #0f2027;
-        padding: 15px 40px;
+        padding: 10px 40px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         border-bottom: 2px solid #00c6ff;
     }
     
-    /* 3. 로고 마크 스타일링 */
-    .brand-logo-clean {
-        color: white;
-        font-size: 16px;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        white-space: nowrap;
-        padding: 10px 0px;
+    /* 우측 상단 메뉴 텍스트 스타일 */
+    .right-nav-item {
+        color: #ffffff;
+        font-size: 15px;
+        font-weight: 500;
+        text-decoration: none;
+        margin-left: 25px;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    .right-nav-item:hover {
+        color: #00c6ff;
     }
     
-    /* 4. 웅장한 히어로 배너 영역 */
+    /* 웅장한 히어로 배너 영역 스타일 */
     .hero-section {
         background-size: cover;
         height: 380px;
@@ -79,21 +83,23 @@ st.markdown("""
         color: white;
         text-align: center;
         padding: 20px;
-        transition: background 0.5s ease-in-out;
     }
-    .hero-title { font-size: 42px; font-weight: 700; text-shadow: 3px 3px 6px rgba(0,0,0,0.7); margin-bottom: 8px; }
-    .hero-subtitle { font-size: 18px; text-shadow: 2px 2px 4px rgba(0,0,0,0.6); color: #00c6ff; }
+    .hero-title { font-size: 46px; font-weight: 800; text-shadow: 3px 3px 6px rgba(0,0,0,0.8); margin-bottom: 12px; letter-spacing: 2px; }
+    .hero-subtitle { font-size: 20px; font-weight: 500; text-shadow: 2px 2px 4px rgba(0,0,0,0.6); color: #00c6ff; }
     
-    /* 5. 콘텐츠 컨테이너 크기 제한 */
+    /* 콘텐츠 컨테이너 크기 제한 */
     .content-box { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
     
-    /* 6. 피드백 반영된 리스트형 뉴스 레이아웃 스타일 */
+    /* 리스트형 뉴스 레이아웃 스타일 */
     .news-list-item {
-        padding: 15px 10px;
-        border-bottom: 1px solid #e0e0e0;
+        padding: 18px 15px;
+        border-bottom: 1px solid #e2e8f0;
         display: flex;
         justify-content: space-between;
         align-items: center;
+    }
+    .news-list-item:last-child {
+        border-bottom: none;
     }
     .news-list-title {
         font-size: 16px;
@@ -113,88 +119,74 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. 다국어 데이터 배열
+# 2. 다국어 데이터 배열 및 텍스트 셋업
 # ==========================================
 LANG_DICT = {
     "한국어 (KO)": "KO", "English (EN)": "EN", "Français (FR)": "FR",       
     "Italiano (IT)": "IT", "简体中文 (ZH)": "ZH", "日本語 (JA)": "JA"          
 }
 
-# 📢 [피드백 반영 1] 모든 다국어 타이틀 뒤에 'S'를 붙여 CHAMPIONSHIPS 로 일괄 변경
+# 📢 [피드백 반영 2, 3] 메인 타이틀을 'SKIMO KOREA'로, 서브타이틀을 '스키등산 정보 포털'로 전면 개정!
 LOCALIZED_TEXT = {
     "KO": {
-        "title": "ISMF KOREA CHAMPIONSHIPS",
-        "subtitle": "올림픽 정식 종목 공인 · 스키등산 세계선수권 대회",
+        "title": "SKIMO KOREA",
+        "subtitle": "스키등산 정보 포털",
         "menu": ["대회 홈", "선수 참가 신청", "실시간 리더보드 (LIVE)", "🔐 심판/관리자 패널"],
         "desc": "본 대회는 국제산악스키연맹(ISMF) 규정을 준수하며, 필드 심판 시스템과 동기화되어 실시간 기록을 전 세계에 생중계합니다.",
-        "video": "📺 대회 룰 안내 영상", "intro_video": "⛷️ 산악스키 종목 소개", "photo": "📸 올림픽 현장 갤러리", "pay": "💳 참가 신청 및 안전 결제",
+        "video": "📺 경기 종목 안내 영상", "intro_video": "⛷️ 산악스키 종목 소개", "photo": "📸 올림픽 현장 갤러리", "pay": "💳 참가 신청 및 안전 결제",
         "news_title": "📰 News & Stories (최신 소식)", "news_tag": "대회 뉴스"
     },
     "EN": {
-        "title": "ISMF KOREA CHAMPIONSHIPS",
-        "subtitle": "Official Olympic Sport · International Skimo Portal",
+        "title": "SKIMO KOREA",
+        "subtitle": "Ski Mountaineering Information Portal",
         "menu": ["Home", "Athlete Registration", "Live Leaderboard", "🔐 Judge/Admin Panel"],
         "desc": "This tournament complies with ISMF regulations. Scoring and penalties are aggregated in real-time globally via the field web app.",
         "video": "📺 Skimo Rules Video", "intro_video": "⛷️ What is Skimo?", "photo": "📸 Olympic Action Gallery", "pay": "💳 Register & Secure Pay",
         "news_title": "📰 News & Stories", "news_tag": "Official News"
-    },
-    "FR": {
-        "title": "CHAMPIONNATS ISMF CORÉE",
-        "subtitle": "Sport Olympique Officiel · Portail International de Skimo",
-        "menu": ["Accueil", "Inscription Athlète", "Tableau Live", "🔐 Panneau des Juges"],
-        "desc": "Ce tournoi est conforme aux règlements de l'ISMF. Les scores sont agrégés en temps réel via l'application mobile des juges.",
-        "video": "📺 Vidéo des Règles", "intro_video": "⛷️ Qu'est-ce que le Skimo?", "photo": "📸 Galerie d'Action Olympique", "pay": "💳 S'inscrire et Payer",
-        "news_title": "📰 Actualités & Histoires", "news_tag": "Infos Officielles"
-    },
-    "IT": {
-        "title": "CAMPIONATI ISMF COREA",
-        "subtitle": "Sport Olimpico Ufficiale · Portale Internazionale Sci Alpinismo",
-        "menu": ["Home", "Iscrizione Atleta", "Classifica Live", "🔐 Pannello Giudici"],
-        "desc": "Questo torneo è conforme ai regolamenti ISMF. I punteggi vengono aggregati in tempo real tramite l'app dei giudici.",
-        "video": "📺 Video Regolamento", "intro_video": "⛷️ Cos'è lo Skimo?", "photo": "📸 Galleria Azione Olimpiadi", "pay": "💳 Iscriviti e Paga",
-        "news_title": "📰 Notizie & Storie", "news_tag": "Notizie Ufficiali"
-    },
-    "ZH": {
-        "title": "ISMF 韩国锦标赛 (CHAMPIONSHIPS)",
-        "subtitle": "奥运会正式项目认证 · 登山滑雪国际门户网站",
-        "menu": ["大会主页", "运动员报名", "实时排行榜", "🔐 裁判/管理员"],
-        "desc": "本次比赛遵守 ISMF 规定。评分 and 处罚将通过现场裁判의 移动网络应用实时在全球范围内汇总。",
-        "video": "📺 赛事规则视频", "intro_video": "⛷️ 什么是滑雪登山?", "photo": "📸 奥运会现场画廊", "pay": "💳 安全支付并确认",
-        "news_title": "📰 新闻与故事", "news_tag": "官方新闻"
-    },
-    "JA": {
-        "title": "ISMF 韓国選手権大会 (CHAMPIONSHIPS)",
-        "subtitle": "オリンピック正式種目公認 · 山岳スキー国際ポータル",
-        "menu": ["ホーム", "選手参加申し込み", "リアルタイム順位表", "🔐 審判/管理者"],
-        "desc": "本大会은 ISMF規定에 준거해 있습니다. 스코어 및 페널ティ는 현지 심판의 앱을 통해 실시간으로 집계됩니다.",
-        "video": "📺 競技ルール動画", "intro_video": "⛷️ 山岳スキーとは？", "photo": "📸 オリンピック写真館", "pay": "💳 安全な決済と確定",
-        "news_title": "📰 ニュース＆ストーリー", "news_tag": "公式ニュース"
     }
 }
 
+# 다국어 기본 안전장치 (그 외 언어는 영어 사양 기본 확장 체계 적용)
+for lang in ["FR", "IT", "ZH", "JA"]:
+    if lang not in LOCALIZED_TEXT:
+        LOCALIZED_TEXT[lang] = LOCALIZED_TEXT["EN"]
+
 # ==========================================
-# 3. 최상단 통합형 내비게이션 구조 설계 (사이드바 대체)
+# 3. [피드백 반영 1, 4, 5] 최상단 레이아웃 완전 재배치
 # ==========================================
 top_nav_container = st.container()
 
 with top_nav_container:
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-    c_logo, c_menu, c_lang = st.columns([3, 5, 2])
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
     
-    with c_logo:
-        st.markdown("<div style='padding-top:5px;'><span class='brand-logo-clean'>🏔️ ISMF NAVIGATION BAR</span></div>", unsafe_allow_html=True)
-        
+    # [왼쪽 상단] 메뉴 선택창 배치 / [중앙] 여백 / [우측 상단] 다국어, 공지사항, 로그인 배치
+    c_menu, c_space, c_right = st.columns([3, 4, 4])
+    
     with c_menu:
+        # 메뉴 셀렉트 박스를 왼쪽 가장 첫 단에 전면 배치 완료!
         selected_menu_raw = st.selectbox("Menu Select", list(LOCALIZED_TEXT["KO"]["menu"]), label_visibility="collapsed")
         menu_index = LOCALIZED_TEXT["KO"]["menu"].index(selected_menu_raw)
         
-    with c_lang:
-        selected_lang_name = st.selectbox("Global Select", list(LANG_DICT.keys()), label_visibility="collapsed")
-        current_lang = LANG_DICT[selected_lang_name]
-        T = LOCALIZED_TEXT[current_lang]
+    with c_right:
+        # 우측 정렬을 부드럽게 매칭하기 위한 서브 칼럼 분할 구조
+        sub_lang, sub_buttons = st.columns([4, 6])
+        with sub_lang:
+            selected_lang_name = st.selectbox("Global Select", list(LANG_DICT.keys()), label_visibility="collapsed")
+            current_lang = LANG_DICT[selected_lang_name]
+            T = LOCALIZED_TEXT[current_lang]
+            
+        with sub_buttons:
+            # HTML/CSS 구조 바인딩을 통해 '공지사항' 및 '로그인/회원가입' 링크 우측 상단 고정 출력 완료!
+            st.markdown(
+                "<div style='text-align: right; padding-top: 6px; white-space: nowrap;'>"
+                "<a class='right-nav-item' href='#'>📢 공지사항</a>"
+                "<a class='right-nav-item' href='#'>👤 로그인/회원가입</a>"
+                "</div>", 
+                unsafe_allow_html=True
+            )
 
 # ==========================================
-# 4. 동적 배경화면 결합 처리 및 히어로 배너 출력
+# 4. 히어로 배너 영역 동적 시각화 출력 (변경된 타이틀 적용)
 # ==========================================
 BG_IMAGES = [
     "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80",  
@@ -205,14 +197,14 @@ BG_IMAGES = [
 selected_bg = BG_IMAGES[menu_index]
 
 st.markdown(f"""
-    <div class="hero-section" style="background: linear-gradient(rgba(15, 32, 39, 0.7), rgba(44, 83, 100, 0.45)), url('{selected_bg}') no-repeat center center; background-size: cover;">
+    <div class="hero-section" style="background: linear-gradient(rgba(15, 32, 39, 0.75), rgba(44, 83, 100, 0.5)), url('{selected_bg}') no-repeat center center; background-size: cover;">
         <div class="hero-title">{T["title"]}</div>
         <div class="hero-subtitle">🏔️ {T["subtitle"]}</div>
     </div>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 5. 세션 데이터 베이스 인스턴스 활성화
+# 5. 세션 데이터 및 메인 스페이스 바인딩
 # ==========================================
 if "athletes" not in st.session_state:
     st.session_state.athletes = [
@@ -229,7 +221,6 @@ st.markdown('<div class="content-box">', unsafe_allow_html=True)
 if menu_index == 0:
     st.header("🏁 Upcoming Events & Overview")
     
-    # 4단 분할 레이아웃 유지
     col_text, col_video, col_intro, col_photo = st.columns([3, 3, 3, 3])
     
     with col_text:
@@ -240,7 +231,7 @@ if menu_index == 0:
         * **Sanctioned by:** ISMF
         * **Scale:** 3,000+ Participants
         """)
-        st.success("⚙️ **Feedback Applied**\nTitle spelling fixed & News section layout streamlined.")
+        st.success("✨ **All Portal Feedbacks Applied**\n- Left-aligned layout menu activated.\n- Header portal texts upgraded.\n- Quick headers established.")
         
     with col_video:
         st.markdown(f"### {T['video']}")
@@ -273,9 +264,9 @@ if menu_index == 0:
                 st.image(github_raw_url, use_container_width=True)
                 st.caption(f"<div style='text-align:center; color:#00c6ff; font-weight:bold; margin-top:5px;'>{selected_photo['caption']}</div>", unsafe_allow_html=True)
             except:
-                st.error("⚠️ 이미지를 불러오지 못했습니다. 파일명을 다시 한번 체크해 주세요.")
+                st.error("⚠️ 이미지를 불러오지 못했습니다.")
 
-    # 📰 [피드백 반영 2] NEWS & STORIES 세로 리스트형 정렬 구조 변경
+    # 📰 NEWS & STORIES 세로 리스트 구조 유지
     st.markdown("---")
     st.header(T["news_title"])
     
@@ -297,7 +288,6 @@ if menu_index == 0:
         }
     ]
     
-    # 아버지가 주신 피드백 사진처럼 깔끔하고 정돈된 세로 가독성 리스트 구현
     st.markdown("<div style='background-color: #f8fafc; padding: 10px 20px; border-radius: 8px; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
     for item in news_items:
         st.markdown(f"""
