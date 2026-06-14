@@ -34,9 +34,7 @@ st.markdown(f"""
         display: none !important;
     }}
     
-    /* -------------------------------------------
-       마우스 커서 텍스트 입력창 변환 방지 규칙
-    ------------------------------------------- */
+    /* 마우스 커서 텍스트 입력창 변환 방지 규칙 */
     div[data-testid="stSelectbox"] div[role="combobox"] {{
         cursor: pointer !important;
     }}
@@ -98,7 +96,7 @@ st.markdown(f"""
     /* 타이틀 섹션 규격 설정 */
     .hero-section {{
         padding-top: 50px;
-        padding-bottom: 30px;
+        padding-bottom: 15px;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -107,34 +105,51 @@ st.markdown(f"""
         text-align: center;
     }}
     .hero-title {{ font-size: 42px; font-weight: 800; text-shadow: 3px 3px 8px rgba(0,0,0,0.9); margin-bottom: 5px; letter-spacing: 1px; }}
-    .hero-subtitle {{ font-size: 18px; font-weight: 500; text-shadow: 2px 2px 4px rgba(0,0,0,0.7); color: #00c6ff; }}
+    .hero-subtitle {{ font-size: 18px; font-weight: 500; text-shadow: 2px 2px 4px rgba(0,0,0,0.7); color: #00c6ff; margin-bottom: 20px; }}
     
     /* -------------------------------------------
-       [핵심 변경] 하단 설명 레이아웃을 감싸는 커다란 회색 테두리 상자
+       [핵심 수정] 사진 속 커다란 반투명 글래스 박스 스킨
     ------------------------------------------- */
+    .glass-search-container {{
+        width: 100%;
+        max-width: 1160px;
+        margin: 0 auto 35px auto;
+        background: rgba(255, 255, 255, 0.08); /* 반투명 배경 */
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.25); /* 연한 회색 테두리 */
+        border-radius: 20px; /* 라운드 처리 */
+        padding: 5px 15px; /* 내부 스트림릿 인풋 위치 교정용 */
+    }}
+    
+    /* 외부의 투박하고 검은 입력창 스타일을 지우고 반투명 박스에 투명하게 동화 */
+    .glass-search-container div[data-testid="stTextInput"] input {{
+        background-color: transparent !important;
+        border: none !important;
+        color: #ffffff !important;
+        font-size: 16px !important;
+        padding: 12px 10px !important;
+    }}
+    .glass-search-container div[data-testid="stTextInput"] input::placeholder {{
+        color: rgba(255, 255, 255, 0.6) !important;
+    }}
+    .glass-search-container div[data-testid="stTextInput"] div {{
+        border: none !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
+    }}
+    
+    /* 하단 설명 레이아웃용 글래스모피즘 컨테이너 */
     .content-box {{ 
         max-width: 1200px; 
         margin: 0 auto 50px auto; 
-        padding: 35px; 
+        padding: 30px; 
         background: rgba(255, 255, 255, 0.07);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.2); /* 깔끔한 투명 회색 테두리 선 */
+        border: 1px solid rgba(255, 255, 255, 0.15);
         color: #ffffff;
-    }}
-    
-    /* 박스 내부에 들어간 검색 인풋 창 스타일 세부 튜닝 */
-    .inner-search-box div[data-testid="stTextInput"] input {{
-        background-color: rgba(255, 255, 255, 0.06) !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        color: #ffffff !important;
-        font-size: 15px !important;
-        border-radius: 8px !important;
-        padding: 10px 14px !important;
-    }}
-    .inner-search-box div[data-testid="stTextInput"] input::placeholder {{
-        color: rgba(255, 255, 255, 0.5) !important;
     }}
     
     .content-box h1, .content-box h2, .content-box h3, .content-box p, .content-box li {{
@@ -237,7 +252,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 4. 히어로 타이틀 영역 (작은 검색창은 완벽 삭제됨!)
+# 4. 히어로 타이틀 영역 (위쪽 작은 테두리는 완벽 삭제!)
 # ==========================================
 st.markdown(f"""
     <div class="centered-wrapper">
@@ -249,7 +264,19 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 5. 세션 데이터 설정 및 메인 커다란 테두리 상자 생성
+# 5. [핵심 수정] 검색 단추를 커다란 반투명 글래스 박스 내부로 통합 배치
+# ==========================================
+st.markdown('<div class="centered-wrapper">', unsafe_allow_html=True)
+st.markdown('<div class="glass-search-container">', unsafe_allow_html=True)
+
+# 밑에서 따로 돌던 기존 입력창을 가져와 커다란 글래스 테두리 박스 정중앙에 매핑
+search_query = st.text_input("Main Search Bar", placeholder=T["search_holder"], label_visibility="collapsed")
+
+st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ==========================================
+# 6. 하단 콘텐츠 영역 바인딩
 # ==========================================
 if "athletes" not in st.session_state:
     st.session_state.athletes = [
@@ -258,13 +285,8 @@ if "athletes" not in st.session_state:
         {"BIB": "103", "Name": "Chloe", "Team": "FRANCE", "Status": "RACING", "CP1": "10:16:55", "CP2": "10:49:30", "Penalty": "None"},
     ]
 
-# 커다란 투명 회색 테두리 상자 내부 시작
+# 본문 내용용 반투명 하단 컨테이너
 st.markdown('<div class="centered-wrapper"><div class="content-box">', unsafe_allow_html=True)
-
-# [수정 적용] 검색 단추를 커다란 회색 박스 최상단에 세련되게 배치
-st.markdown('<div class="inner-search-box">', unsafe_allow_html=True)
-search_query = st.text_input("Box Inner Search", placeholder=T["search_holder"], label_visibility="collapsed")
-st.markdown('</div><div style="height: 25px;"></div>', unsafe_allow_html=True)
 
 if search_query:
     st.info(f"🔍 '{search_query}'에 대한 포털 내 실시간 검색 결과 매칭 중...")
@@ -274,7 +296,6 @@ if search_query:
 # -------------------------------------------------------------------------
 if menu_index == 0:
     st.markdown("## 🏁 Upcoming Events & Overview")
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
     
     col_text, col_video, col_intro, col_photo = st.columns([3, 3, 3, 3])
     
@@ -286,7 +307,7 @@ if menu_index == 0:
         * **Sanctioned by:** ISMF
         * **Scale:** 3,000+ Participants
         """)
-        st.success("🎯 **UI 리포지셔닝 성공**\n중복된 상단 작은 박스를 완벽히 지우고, 검색 단추가 메인 테두리 상자 최상단 내부로 편안하게 통합되었습니다.")
+        st.success("🎨 **레이아웃 매칭 완료**\n하단에 겉돌던 검색 필드가 커다란 반투명 글래스 박스 테두리 안으로 완벽히 통합 구동됩니다.")
         
     with col_video:
         st.markdown(f"### {T['video']}")
@@ -323,7 +344,7 @@ if menu_index == 0:
 
     # 📰 NEWS & STORIES
     st.markdown("<hr style='border-color: rgba(255,255,255,0.15);'>", unsafe_allow_html=True)
-    st.markdown(f"<h2>{T['news_title']}</h2>", unsafe_allow_html=True)
+    st.markdown(f"## {T['news_title']}")
     
     news_items = [
         {
@@ -384,4 +405,4 @@ elif menu_index == 3:
     st.markdown(f"## {LOCALIZED_TEXT['KO']['menu'][3]}")
     st.info("System operational. Field telemetry bridge secure.")
 
-st.markdown('</div></div>', unsafe_allow_html=True) # 커다란 투명 회색 테두리 상자 끝
+st.markdown('</div></div>', unsafe_allow_html=True)
