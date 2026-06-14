@@ -239,12 +239,12 @@ if menu_index == 0:
     with col_photo:
         st.markdown(f"### {T['photo']}")
         
-        # [수정] 사용자가 제공해준 3장의 고화질 실제 사진 매칭 진행
-        gallery_images = [
-            {"path": "산악스키 경기 사진.jpg", "caption": "❄️ 눈보라를 뚫고 올라가는 한계 극복의 업힐 레이스"},
-            {"path": "올림픽 산악스키 경기 사진.jpg", "caption": "🏅 오륜기 마크 앞에서 펼쳐지는 치열한 선두권 경쟁"},
-            {"path": "산악스키 올림픽 관련 사진.jpg", "caption": "🎉 꿈의 무대, 올림픽 포디움에 선 영광의 메달리스트들"}
-        ]
+        # [수정된 영문 경로 설정]
+gallery_images = [
+    {"path": "skimo_race_1.jpg", "caption": "❄️ 눈보라를 뚫고 올라가는 한계 극복의 업힐 레이스"},
+    {"path": "skimo_race_2.jpg", "caption": "🏅 오륜기 마크 앞에서 펼쳐지는 치열한 선두권 경쟁"},
+    {"path": "skimo_race_3.jpg", "caption": "🎉 꿈의 무대, 올림픽 포디움에 선 영광의 메달리스트들"}
+]
         
         # 유저가 조작할 수 있는 라디오 인터페이스
         photo_idx = st.radio("📸 사진 선택", [1, 2, 3], horizontal=True, label_visibility="collapsed")
