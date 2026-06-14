@@ -87,17 +87,28 @@ st.markdown("""
     /* 5. 콘텐츠 컨테이너 크기 제한 */
     .content-box { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
     
-    /* 6. 뉴스 카드 컴포넌트 */
-    .news-card {
-        background-color: #0f2027; border-radius: 8px; padding: 0px; margin-bottom: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15); color: white; overflow: hidden; height: 100%;
-        display: flex; flex-direction: column;
+    /* 6. 피드백 반영된 리스트형 뉴스 레이아웃 스타일 */
+    .news-list-item {
+        padding: 15px 10px;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
-    .news-img { width: 100%; height: 170px; object-fit: cover; }
-    .news-body { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
-    .news-headline { font-size: 15px; font-weight: bold; line-height: 1.4; margin-bottom: 12px; color: #ffffff; }
-    .news-meta { font-size: 12px; color: #9aa0a6; }
-    .news-tag { color: #00c6ff; font-weight: bold; margin-top: 5px; font-size: 11px; }
+    .news-list-title {
+        font-size: 16px;
+        font-weight: 500;
+        color: #1e293b;
+        text-decoration: none;
+    }
+    .news-list-title:hover {
+        color: #00c6ff;
+    }
+    .news-list-meta {
+        font-size: 14px;
+        color: #64748b;
+        white-space: nowrap;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -109,9 +120,10 @@ LANG_DICT = {
     "Italiano (IT)": "IT", "简体中文 (ZH)": "ZH", "日本語 (JA)": "JA"          
 }
 
+# 📢 [피드백 반영 1] 모든 다국어 타이틀 뒤에 'S'를 붙여 CHAMPIONSHIPS 로 일괄 변경
 LOCALIZED_TEXT = {
     "KO": {
-        "title": "ISMF KOREA CHAMPIONSHIP",
+        "title": "ISMF KOREA CHAMPIONSHIPS",
         "subtitle": "올림픽 정식 종목 공인 · 스키등산 세계선수권 대회",
         "menu": ["대회 홈", "선수 참가 신청", "실시간 리더보드 (LIVE)", "🔐 심판/관리자 패널"],
         "desc": "본 대회는 국제산악스키연맹(ISMF) 규정을 준수하며, 필드 심판 시스템과 동기화되어 실시간 기록을 전 세계에 생중계합니다.",
@@ -119,7 +131,7 @@ LOCALIZED_TEXT = {
         "news_title": "📰 News & Stories (최신 소식)", "news_tag": "대회 뉴스"
     },
     "EN": {
-        "title": "ISMF KOREA CHAMPIONSHIP",
+        "title": "ISMF KOREA CHAMPIONSHIPS",
         "subtitle": "Official Olympic Sport · International Skimo Portal",
         "menu": ["Home", "Athlete Registration", "Live Leaderboard", "🔐 Judge/Admin Panel"],
         "desc": "This tournament complies with ISMF regulations. Scoring and penalties are aggregated in real-time globally via the field web app.",
@@ -127,7 +139,7 @@ LOCALIZED_TEXT = {
         "news_title": "📰 News & Stories", "news_tag": "Official News"
     },
     "FR": {
-        "title": "CHAMPIONNAT ISMF CORÉE",
+        "title": "CHAMPIONNATS ISMF CORÉE",
         "subtitle": "Sport Olympique Officiel · Portail International de Skimo",
         "menu": ["Accueil", "Inscription Athlète", "Tableau Live", "🔐 Panneau des Juges"],
         "desc": "Ce tournoi est conforme aux règlements de l'ISMF. Les scores sont agrégés en temps réel via l'application mobile des juges.",
@@ -135,7 +147,7 @@ LOCALIZED_TEXT = {
         "news_title": "📰 Actualités & Histoires", "news_tag": "Infos Officielles"
     },
     "IT": {
-        "title": "CAMPIONATO ISMF COREA",
+        "title": "CAMPIONATI ISMF COREA",
         "subtitle": "Sport Olimpico Ufficiale · Portale Internazionale Sci Alpinismo",
         "menu": ["Home", "Iscrizione Atleta", "Classifica Live", "🔐 Pannello Giudici"],
         "desc": "Questo torneo è conforme ai regolamenti ISMF. I punteggi vengono aggregati in tempo real tramite l'app dei giudici.",
@@ -143,7 +155,7 @@ LOCALIZED_TEXT = {
         "news_title": "📰 Notizie & Storie", "news_tag": "Notizie Ufficiali"
     },
     "ZH": {
-        "title": "ISMF 韩国锦标赛",
+        "title": "ISMF 韩国锦标赛 (CHAMPIONSHIPS)",
         "subtitle": "奥运会正式项目认证 · 登山滑雪国际门户网站",
         "menu": ["大会主页", "运动员报名", "实时排行榜", "🔐 裁判/管理员"],
         "desc": "本次比赛遵守 ISMF 规定。评分 and 处罚将通过现场裁判의 移动网络应用实时在全球范围内汇总。",
@@ -151,7 +163,7 @@ LOCALIZED_TEXT = {
         "news_title": "📰 新闻与故事", "news_tag": "官方新闻"
     },
     "JA": {
-        "title": "ISMF 韓国選手権大会",
+        "title": "ISMF 韓国選手権大会 (CHAMPIONSHIPS)",
         "subtitle": "オリンピック正式種目公認 · 山岳スキー国際ポータル",
         "menu": ["ホーム", "選手参加申し込み", "リアルタイム順位表", "🔐 審判/管理者"],
         "desc": "本大会은 ISMF規定에 준거해 있습니다. 스코어 및 페널ティ는 현지 심판의 앱을 통해 실시간으로 집계됩니다.",
@@ -217,7 +229,7 @@ st.markdown('<div class="content-box">', unsafe_allow_html=True)
 if menu_index == 0:
     st.header("🏁 Upcoming Events & Overview")
     
-    # 4단 분할 레이아웃 (개요, 룰 안내 영상, 종목 소개 영상, 이미지 갤러리)
+    # 4단 분할 레이아웃 유지
     col_text, col_video, col_intro, col_photo = st.columns([3, 3, 3, 3])
     
     with col_text:
@@ -228,7 +240,7 @@ if menu_index == 0:
         * **Sanctioned by:** ISMF
         * **Scale:** 3,000+ Participants
         """)
-        st.success("🖼️ **Custom Gallery Active**\nYour uploaded Olympic Skimo race photos are now successfully linked.")
+        st.success("⚙️ **Feedback Applied**\nTitle spelling fixed & News section layout streamlined.")
         
     with col_video:
         st.markdown(f"### {T['video']}")
@@ -263,42 +275,38 @@ if menu_index == 0:
             except:
                 st.error("⚠️ 이미지를 불러오지 못했습니다. 파일명을 다시 한번 체크해 주세요.")
 
-    # 📰 [완벽 복구] NEWS & STORIES 섹션 위치 정렬 보정
+    # 📰 [피드백 반영 2] NEWS & STORIES 세로 리스트형 정렬 구조 변경
     st.markdown("---")
     st.header(T["news_title"])
     
     news_items = [
         {
             "title": "French Alps 2030 proposal marks major milestone for ski mountaineering",
-            "date": "🗓️ June 9, 2026",
-            "tag": f"# {T['news_tag']} # Olympics",
-            "img": "skimo_race_1.jpg"
+            "date": "2026-06-09",
+            "link": "https://www.ismf-ski.org/"
         },
         {
             "title": "ISMF Releases Provisional 2026/27 International Calendar",
-            "date": "🗓️ June 3, 2026",
-            "tag": f"# {T['news_tag']} # Competitions",
-            "img": "skimo_race_2.jpg"
+            "date": "2026-06-03",
+            "link": "https://www.ismf-ski.org/"
         },
         {
             "title": "Looking Ahead: Key Olympic Qualification Moments in June",
-            "date": "🗓️ May 29, 2026",
-            "tag": f"# {T['news_tag']} # RoadToMilano",
-            "img": "skimo_race_3.jpg"
+            "date": "2026-05-29",
+            "link": "https://www.ismf-ski.org/"
         }
     ]
     
-    n_cols = st.columns(3)
-    for idx, item in enumerate(news_items):
-        with n_cols[idx]:
-            try:
-                st.image(item["img"], use_container_width=True)
-            except:
-                github_raw_url = f"https://raw.githubusercontent.com/pyminno12/skimo-website/main/{item['img']}"
-                st.image(github_raw_url, use_container_width=True)
-                
-            st.markdown(f"#### {item['title']}")
-            st.caption(f"<span style='color:#9aa0a6;'>{item['date']}</span> &nbsp;&nbsp; <span style='color:#00c6ff; font-weight:bold;'>{item['tag']}</span>", unsafe_allow_html=True)
+    # 아버지가 주신 피드백 사진처럼 깔끔하고 정돈된 세로 가독성 리스트 구현
+    st.markdown("<div style='background-color: #f8fafc; padding: 10px 20px; border-radius: 8px; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
+    for item in news_items:
+        st.markdown(f"""
+            <div class="news-list-item">
+                <a href="{item['link']}" target="_blank" class="news-list-title">📌 {item['title']}</a>
+                <span class="news-list-meta">📅 {item['date']}</span>
+            </div>
+        """, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
 # [콘텐츠 분기 2] 선수 참가 신청
