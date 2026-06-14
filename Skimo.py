@@ -97,8 +97,8 @@ st.markdown(f"""
     
     /* 타이틀 섹션 규격 설정 */
     .hero-section {{
-        padding-top: 40px;
-        padding-bottom: 20px;
+        padding-top: 50px;
+        padding-bottom: 30px;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -107,50 +107,34 @@ st.markdown(f"""
         text-align: center;
     }}
     .hero-title {{ font-size: 42px; font-weight: 800; text-shadow: 3px 3px 8px rgba(0,0,0,0.9); margin-bottom: 5px; letter-spacing: 1px; }}
-    .hero-subtitle {{ font-size: 18px; font-weight: 500; text-shadow: 2px 2px 4px rgba(0,0,0,0.7); color: #00c6ff; margin-bottom: 25px; }}
+    .hero-subtitle {{ font-size: 18px; font-weight: 500; text-shadow: 2px 2px 4px rgba(0,0,0,0.7); color: #00c6ff; }}
     
     /* -------------------------------------------
-       [핵심 수정] 연한 회색 테두리를 가진 메인 검색창 컨테이너
+       [핵심 변경] 하단 설명 레이아웃을 감싸는 커다란 회색 테두리 상자
     ------------------------------------------- */
-    .main-search-container {{
-        width: 100%;
-        max-width: 800px; /* 너무 퍼지지 않도록 너비 제한 */
-        margin: 0 auto 30px auto;
-        background: rgba(255, 255, 255, 0.08); /* 연한 투명 회색 배경 */
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.25); /* 사진 속 연한 회색 테두리 */
-        border-radius: 50px; /* 둥근 라운드 테두리 */
-        padding: 6px 18px; /* 스트림릿 입력창이 쏙 들어가도록 내부 여백 조절 */
-    }}
-    
-    /* 스트림릿 기본 입력창을 테두리 없는 투명한 스타일로 튜닝 */
-    .main-search-container div[data-testid="stTextInput"] input {{
-        background-color: transparent !important;
-        border: none !important;
-        color: #ffffff !important;
-        font-size: 16px !important;
-    }}
-    .main-search-container div[data-testid="stTextInput"] input::placeholder {{
-        color: rgba(255, 255, 255, 0.6) !important;
-    }}
-    /* 포커스 시 나타나는 기본 파란색 테두리 제거 */
-    .main-search-container div[data-testid="stTextInput"] div {{
-        border: none !important;
-        background-color: transparent !important;
-        box-shadow: none !important;
-    }}
-    
-    /* 하단 설명 레이아웃까지 배경이 투명하게 비치는 글래스모피즘 컨테이너 */
     .content-box {{ 
         max-width: 1200px; 
         margin: 0 auto 50px auto; 
-        padding: 30px; 
+        padding: 35px; 
         background: rgba(255, 255, 255, 0.07);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.2); /* 깔끔한 투명 회색 테두리 선 */
         color: #ffffff;
+    }}
+    
+    /* 박스 내부에 들어간 검색 인풋 창 스타일 세부 튜닝 */
+    .inner-search-box div[data-testid="stTextInput"] input {{
+        background-color: rgba(255, 255, 255, 0.06) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        color: #ffffff !important;
+        font-size: 15px !important;
+        border-radius: 8px !important;
+        padding: 10px 14px !important;
+    }}
+    .inner-search-box div[data-testid="stTextInput"] input::placeholder {{
+        color: rgba(255, 255, 255, 0.5) !important;
     }}
     
     .content-box h1, .content-box h2, .content-box h3, .content-box p, .content-box li {{
@@ -201,7 +185,7 @@ LOCALIZED_TEXT = {
         "desc": "본 대회는 국제산악스키연맹(ISMF) 규정을 준수하며, field 심판 시스템과 동기화되어 실시간 기록을 전 세계에 생중계합니다.",
         "video": "📺 경기 종목 안내", "intro_video": "⛷️ 산악스키 종목 소개", "photo": "📸 올림픽 현장 갤러리", "pay": "💳 참가 신청 및 안전 결제",
         "news_title": "📰 News & Stories (최신 소식)", "news_tag": "대회 뉴스",
-        "search_holder": "🔍 검색어를 입력하세요..."
+        "search_holder": "🔍 포털 사이트 내 필요한 정보를 입력해 주세요..."
     },
     "EN": {
         "title": "SKIMO KOREA",
@@ -210,7 +194,7 @@ LOCALIZED_TEXT = {
         "desc": "This tournament complies with ISMF regulations. Scoring and penalties are aggregated in real-time globally via the field web app.",
         "video": "📺 Skimo Rules Video", "intro_video": "⛷️ What is Skimo?", "photo": "📸 Olympic Action Gallery", "pay": "💳 Register & Secure Pay",
         "news_title": "📰 News & Stories", "news_tag": "Official News",
-        "search_holder": "🔍 Search information..."
+        "search_holder": "🔍 Search tournament information here..."
     }
 }
 
@@ -219,7 +203,7 @@ for lang in ["FR", "IT", "ZH", "JA"]:
         LOCALIZED_TEXT[lang] = LOCALIZED_TEXT["EN"]
 
 # ==========================================
-# 3. 상단 네비게이션 바 레이아웃 (검색창이 제외되어 더 깔끔해짐)
+# 3. 상단 네비게이션 바 레이아웃
 # ==========================================
 st.markdown('<div class="custom-header-bg">', unsafe_allow_html=True)
 st.markdown('<div class="centered-wrapper">', unsafe_allow_html=True)
@@ -253,7 +237,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 4. 히어로 타이틀 및 중앙 라운드 검색창 배치
+# 4. 히어로 타이틀 영역 (작은 검색창은 완벽 삭제됨!)
 # ==========================================
 st.markdown(f"""
     <div class="centered-wrapper">
@@ -264,14 +248,8 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# [수정] SKIMO KOREA 밑 연한 회색 라운드 테두리 박스 스킨 안에 검색 텍스트 필드 쏙 집어넣기
-with st.container():
-    st.markdown('<div class="centered-wrapper"><div class="main-search-container">', unsafe_allow_html=True)
-    search_query = st.text_input("Main Search", placeholder=T["search_holder"], label_visibility="collapsed")
-    st.markdown('</div></div>', unsafe_allow_html=True)
-
 # ==========================================
-# 5. 세션 데이터 및 메인 스페이스 바인딩
+# 5. 세션 데이터 설정 및 메인 커다란 테두리 상자 생성
 # ==========================================
 if "athletes" not in st.session_state:
     st.session_state.athletes = [
@@ -280,8 +258,13 @@ if "athletes" not in st.session_state:
         {"BIB": "103", "Name": "Chloe", "Team": "FRANCE", "Status": "RACING", "CP1": "10:16:55", "CP2": "10:49:30", "Penalty": "None"},
     ]
 
-# 하단 반투명 글래스 컨테이너
-st.markdown('<div class="content-box">', unsafe_allow_html=True)
+# 커다란 투명 회색 테두리 상자 내부 시작
+st.markdown('<div class="centered-wrapper"><div class="content-box">', unsafe_allow_html=True)
+
+# [수정 적용] 검색 단추를 커다란 회색 박스 최상단에 세련되게 배치
+st.markdown('<div class="inner-search-box">', unsafe_allow_html=True)
+search_query = st.text_input("Box Inner Search", placeholder=T["search_holder"], label_visibility="collapsed")
+st.markdown('</div><div style="height: 25px;"></div>', unsafe_allow_html=True)
 
 if search_query:
     st.info(f"🔍 '{search_query}'에 대한 포털 내 실시간 검색 결과 매칭 중...")
@@ -291,6 +274,7 @@ if search_query:
 # -------------------------------------------------------------------------
 if menu_index == 0:
     st.markdown("## 🏁 Upcoming Events & Overview")
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
     
     col_text, col_video, col_intro, col_photo = st.columns([3, 3, 3, 3])
     
@@ -302,7 +286,7 @@ if menu_index == 0:
         * **Sanctioned by:** ISMF
         * **Scale:** 3,000+ Participants
         """)
-        st.success("🎯 **Search Relocated**\n검색창이 타이틀 하단의 라운드 글래스 테두리 안으로 완벽하게 이동 완료되었습니다.")
+        st.success("🎯 **UI 리포지셔닝 성공**\n중복된 상단 작은 박스를 완벽히 지우고, 검색 단추가 메인 테두리 상자 최상단 내부로 편안하게 통합되었습니다.")
         
     with col_video:
         st.markdown(f"### {T['video']}")
@@ -339,7 +323,7 @@ if menu_index == 0:
 
     # 📰 NEWS & STORIES
     st.markdown("<hr style='border-color: rgba(255,255,255,0.15);'>", unsafe_allow_html=True)
-    st.markdown(f"## {T['news_title']}")
+    st.markdown(f"<h2>{T['news_title']}</h2>", unsafe_allow_html=True)
     
     news_items = [
         {
@@ -400,4 +384,4 @@ elif menu_index == 3:
     st.markdown(f"## {LOCALIZED_TEXT['KO']['menu'][3]}")
     st.info("System operational. Field telemetry bridge secure.")
 
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div></div>', unsafe_allow_html=True) # 커다란 투명 회색 테두리 상자 끝
