@@ -16,9 +16,14 @@ BG_IMAGES = [
     "https://images.unsplash.com/photo-1482867996988-2faec3cbb4f9?auto=format&fit=crop&w=1800&q=80"   
 ]
 
-# 현재 활성화된 메뉴 인덱스를 미리 파악하기 위해 세션 구조 설정
+# 시스템 구동에 필요한 세션 구조 초기화
 if "menu_idx" not in st.session_state:
     st.session_state.menu_idx = 0
+if "user_db" not in st.session_state:
+    # 데모용 기본 회원 데이터베이스 (아이디: 비밀번호)
+    st.session_state.user_db = {"admin": "1234", "skimo": "skimo123"}
+if "logged_in_user" not in st.session_state:
+    st.session_state.logged_in_user = None
 
 selected_bg = BG_IMAGES[st.session_state.menu_idx]
 
@@ -84,7 +89,7 @@ st.markdown(f"""
         padding: 10px 0;
     }}
     
-    /* 우측 상단 메뉴 텍스트 스타일 */
+    /* 우측 상단 메뉴 텍스트 및 스트림릿 버튼 커스텀 내포 스타일 */
     .right-nav-item {{
         color: #ffffff;
         font-size: 14px;
@@ -96,6 +101,26 @@ st.markdown(f"""
     }}
     .right-nav-item:hover {{
         color: #00c6ff;
+    }}
+    
+    /* 스트림릿 기본 링크 버튼을 상단 GNB 내비게이션 바 테마에 맞춤 튜닝 */
+    div.stButton > button {{
+        background: transparent !important;
+        color: white !important;
+        border: none !important;
+        padding: 0px !important;
+        margin-left: 20px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        transition: color 0.2s !important;
+    }}
+    div.stButton > button:hover {{
+        color: #00c6ff !important;
+        background: transparent !important;
+    }}
+    div.stButton > button:focus {{
+        color: #00c6ff !important;
+        box-shadow: none !important;
     }}
     
     /* 깔끔하고 컴팩트한 타이틀 섹션 */
@@ -193,6 +218,44 @@ for lang in ["FR", "IT", "ZH", "JA"]:
         LOCALIZED_TEXT[lang] = LOCALIZED_TEXT["EN"]
 
 # ==========================================
+# [기능 추가] 로그인 및 회원가입 모달 대화상자 함수
+# ==========================================
+@st.dialog("🔐 SKIMO KOREA 계정 관리")
+def auth_dialog():
+    tab1, tab2 = st.tabs(["👤 로그인", "📝 회원가입"])
+    
+    with tab1:
+        st.write("포털 서비스를 위해 로그인해 주세요.")
+        login_id = st.text_input("아이디", key="login_id")
+        login_pw = st.text_input("비밀번호", type="password", key="login_pw")
+        
+        if st.button("로그인 완료", use_container_width=True):
+            if login_id in st.session_state.user_db and st.session_state.user_db[login_id] == login_pw:
+                st.session_state.logged_in_user = login_id
+                st.success(f"🎉 {login_id}님, 환영합니다!")
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.error("❌ 아이디 또는 비밀번호가 일치하지 않습니다.")
+                
+    with tab2:
+        st.write("새로운 SKIMO KOREA 계정을 생성합니다.")
+        new_id = st.text_input("사용할 아이디", key="new_id")
+        new_pw = st.text_input("비밀번호 설정", type="password", key="new_pw")
+        new_pw_confirm = st.text_input("비밀번호 확인", type="password", key="new_pw_confirm")
+        
+        if st.button("회원가입 신청", use_container_width=True):
+            if not new_id or not new_pw:
+                st.warning("⚠️ 아이디와 비밀번호를 모두 입력해 주세요.")
+            elif new_id in st.session_state.user_db:
+                st.error("❌ 이미 존재하는 아이디입니다.")
+            elif new_pw != new_pw_confirm:
+                st.error("❌ 비밀번호 확인이 일치하지 않습니다.")
+            else:
+                st.session_state.user_db[new_id] = new_pw
+                st.success("📝 회원가입이 완료되었습니다! 로그인 탭에서 로그인해 주세요.")
+
+# ==========================================
 # 3. 상단 레이아웃 배치
 # ==========================================
 st.markdown('<div class="custom-header-bg">', unsafe_allow_html=True)
@@ -203,7 +266,6 @@ c_menu, c_search, c_right = st.columns([3, 4, 5])
 with c_menu:
     selected_menu_raw = st.selectbox("Menu Select", list(LOCALIZED_TEXT["KO"]["menu"]), label_visibility="collapsed")
     menu_index = LOCALIZED_TEXT["KO"]["menu"].index(selected_menu_raw)
-    # 선택된 메뉴 인덱스를 세션에 저장하여 동적 배경 즉각 연동
     if st.session_state.menu_idx != menu_index:
         st.session_state.menu_idx = menu_index
         st.rerun()
@@ -219,13 +281,20 @@ with c_right:
         T = LOCALIZED_TEXT[current_lang]
         
     with sub_buttons:
-        st.markdown(
-            "<div style='text-align: right; padding-top: 6px; white-space: nowrap;'>"
-            "<a class='right-nav-item' href='#'>📢 공지사항</a>"
-            "<a class='right-nav-item' href='#'>👤 로그인/회원가입</a>"
-            "</div>", 
-            unsafe_allow_html=True
-        )
+        # 로그인 상태에 따른 GNB 우측 단추 분기 제어 영역
+        btn_col1, btn_col2 = st.columns([1, 1])
+        with btn_col1:
+            st.markdown("<div style='margin-top: 6px;'><a class='right-nav-item' href='#'>📢 공지사항</a></div>", unsafe_allow_html=True)
+        with btn_col2:
+            if st.session_state.logged_in_user is None:
+                # 클릭 시 파이썬 내부 모달(auth_dialog)을 호출하도록 스트림릿 버튼 배치
+                if st.button("👤 로그인/회원가입", key="auth_btn"):
+                    auth_dialog()
+            else:
+                # 로그인 완료 시 로그아웃 단추 표시
+                if st.button(f"🔓 로그아웃 ({st.session_state.logged_in_user})", key="logout_btn"):
+                    st.session_state.logged_in_user = None
+                    st.rerun()
 
 st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
@@ -252,8 +321,12 @@ if "athletes" not in st.session_state:
         {"BIB": "103", "Name": "Chloe", "Team": "FRANCE", "Status": "RACING", "CP1": "10:16:55", "CP2": "10:49:30", "Penalty": "None"},
     ]
 
-# [수정] 반투명 글래스 컨테이너 시작
+# 반투명 글래스 컨테이너 시작
 st.markdown('<div class="content-box">', unsafe_allow_html=True)
+
+# 로그인 성공 메시지 홈 배너 노출
+if st.session_state.logged_in_user:
+    st.toast(f"🔒 {st.session_state.logged_in_user}님 계정으로 보안 접속 중")
 
 if search_query:
     st.info(f"🔍 '{search_query}'에 대한 포털 내 실시간 검색 결과 매칭 중...")
