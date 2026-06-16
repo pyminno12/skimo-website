@@ -20,7 +20,6 @@ BG_IMAGES = [
 if "menu_idx" not in st.session_state:
     st.session_state.menu_idx = 0
 if "user_db" not in st.session_state:
-    # 데모용 기본 회원 데이터베이스 (아이디: 비밀번호)
     st.session_state.user_db = {"admin": "1234", "skimo": "skimo123"}
 if "logged_in_user" not in st.session_state:
     st.session_state.logged_in_user = None
@@ -218,7 +217,7 @@ for lang in ["FR", "IT", "ZH", "JA"]:
         LOCALIZED_TEXT[lang] = LOCALIZED_TEXT["EN"]
 
 # ==========================================
-# [기능 추가] 로그인 및 회원가입 모달 대화상자 함수
+# 로그인 및 회원가입 모달 대화상자 함수
 # ==========================================
 @st.dialog("🔐 SKIMO KOREA 계정 관리")
 def auth_dialog():
@@ -263,15 +262,47 @@ st.markdown('<div class="centered-wrapper">', unsafe_allow_html=True)
 
 c_menu, c_search, c_right = st.columns([3, 4, 5])
 
+# 검색 엔진 업그레이드용 키워드 매핑 테이블 정의
+SEARCH_KEYWORDS = {
+    0: ["홈", "대회", "소개", "뉴스", "소식", "경기", "갤러리", "영상", "home"],
+    1: ["선수", "참가", "신청", "등록", "결제", "접수", "form", "register"],
+    2: ["실시간", "리더", "보드", "라이브", "순위", "기록", "live", "leaderboard"],
+    3: ["심판", "관리자", "패널", "로그", "판정", "panel", "judge", "admin"]
+}
+
+with c_search:
+    search_query = st.text_input("Search", placeholder=LOCALIZED_TEXT["KO"]["search_holder"], label_visibility="collapsed")
+    
+    # [업그레이드 핵심] 사용자가 검색어를 입력했을 때 메뉴 자동 추적 및 이동 로직
+    if search_query:
+        query_clean = search_query.strip().lower()
+        matched_index = None
+        
+        # 키워드 사전을 돌며 검색어가 포함되어 있는지 판단
+        for idx, keywords in SEARCH_KEYWORDS.items():
+            if any(kw in query_clean for kw in keywords):
+                matched_index = idx
+                break
+        
+        # 일치하는 메뉴가 있고, 현재 메뉴와 다르다면 세션 상태를 변경하고 새로고침 수행
+        if matched_index is not None and st.session_state.menu_idx != matched_index:
+            st.session_state.menu_idx = matched_index
+            st.rerun()
+
 with c_menu:
-    selected_menu_raw = st.selectbox("Menu Select", list(LOCALIZED_TEXT["KO"]["menu"]), label_visibility="collapsed")
-    menu_index = LOCALIZED_TEXT["KO"]["menu"].index(selected_menu_raw)
+    # 현재 활성화된 메뉴 인덱스를 기준으로 셀렉트박스 동기화
+    menu_list = list(LOCALIZED_TEXT["KO"]["menu"])
+    selected_menu_raw = st.selectbox(
+        "Menu Select", 
+        menu_list, 
+        index=st.session_state.menu_idx, 
+        label_visibility="collapsed"
+    )
+    menu_index = menu_list.index(selected_menu_raw)
+    
     if st.session_state.menu_idx != menu_index:
         st.session_state.menu_idx = menu_index
         st.rerun()
-    
-with c_search:
-    search_query = st.text_input("Search", placeholder=LOCALIZED_TEXT["KO"]["search_holder"], label_visibility="collapsed")
     
 with c_right:
     sub_lang, sub_buttons = st.columns([4, 6])
@@ -281,17 +312,14 @@ with c_right:
         T = LOCALIZED_TEXT[current_lang]
         
     with sub_buttons:
-        # 로그인 상태에 따른 GNB 우측 단추 분기 제어 영역
         btn_col1, btn_col2 = st.columns([1, 1])
         with btn_col1:
             st.markdown("<div style='margin-top: 6px;'><a class='right-nav-item' href='#'>📢 공지사항</a></div>", unsafe_allow_html=True)
         with btn_col2:
             if st.session_state.logged_in_user is None:
-                # 클릭 시 파이썬 내부 모달(auth_dialog)을 호출하도록 스트림릿 버튼 배치
                 if st.button("👤 로그인/회원가입", key="auth_btn"):
                     auth_dialog()
             else:
-                # 로그인 완료 시 로그아웃 단추 표시
                 if st.button(f"🔓 로그아웃 ({st.session_state.logged_in_user})", key="logout_btn"):
                     st.session_state.logged_in_user = None
                     st.rerun()
@@ -324,17 +352,17 @@ if "athletes" not in st.session_state:
 # 반투명 글래스 컨테이너 시작
 st.markdown('<div class="content-box">', unsafe_allow_html=True)
 
-# 로그인 성공 메시지 홈 배너 노출
 if st.session_state.logged_in_user:
     st.toast(f"🔒 {st.session_state.logged_in_user}님 계정으로 보안 접속 중")
 
+# 상단에서 인식된 검색 결과를 하단 본문에 가이드로 연동 표시
 if search_query:
-    st.info(f"🔍 '{search_query}'에 대한 포털 내 실시간 검색 결과 매칭 중...")
+    st.success(f"🔍 '{search_query}' 검색 🧭 매칭된 메뉴 탭으로 실시간 스크롤 동기화 완료!")
 
 # -------------------------------------------------------------------------
-# [콘텐츠 분기 1] 대회 홈 화면
+# [콘텐츠 분기 1] 대회 홈 화면 (menu_idx == 0)
 # -------------------------------------------------------------------------
-if menu_index == 0:
+if st.session_state.menu_idx == 0:
     st.markdown("## 🏁 Upcoming Events & Overview")
     
     col_text, col_video, col_intro, col_photo = st.columns([3, 3, 3, 3])
@@ -415,9 +443,9 @@ if menu_index == 0:
     st.markdown("</div>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# [콘텐츠 분기 2] 선수 참가 신청
+# [콘텐츠 분기 2] 선수 참가 신청 (menu_idx == 1)
 # -------------------------------------------------------------------------
-elif menu_index == 1:
+elif st.session_state.menu_idx == 1:
     st.markdown(f"## {LOCALIZED_TEXT['KO']['menu'][1]}")
     with st.form("global_reg_form"):
         p_name = st.text_input("Name")
@@ -431,17 +459,17 @@ elif menu_index == 1:
             st.success("Registration Successful!")
 
 # -------------------------------------------------------------------------
-# [콘텐츠 분기 3] 실시간 리더보드
+# [콘텐츠 분기 3] 실시간 리더보드 (menu_idx == 2)
 # -------------------------------------------------------------------------
-elif menu_index == 2:
+elif st.session_state.menu_idx == 2:
     st.markdown(f"## {LOCALIZED_TEXT['KO']['menu'][2]}")
     df = pd.DataFrame(st.session_state.athletes)
     st.dataframe(df.set_index("BIB"), use_container_width=True)
 
 # -------------------------------------------------------------------------
-# [콘텐츠 분기 4] 심판 패널
+# [콘텐츠 분기 4] 심판 패널 (menu_idx == 3)
 # -------------------------------------------------------------------------
-elif menu_index == 3:
+elif st.session_state.menu_idx == 3:
     st.markdown(f"## {LOCALIZED_TEXT['KO']['menu'][3]}")
     st.info("System operational. Field telemetry bridge secure.")
 
