@@ -88,7 +88,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. [업그레이드 핵심] 6개국 다국어 번역 데이터 보강
+# 2. 6개국 다국어 번역 데이터
 # ==========================================
 LANG_DICT = {
     "한국어 (KO)": "KO", "English (EN)": "EN", "Français (FR)": "FR",       
@@ -180,7 +180,6 @@ def auth_dialog():
 st.markdown('<div class="custom-header-bg">', unsafe_allow_html=True)
 st.markdown('<div class="centered-wrapper">', unsafe_allow_html=True)
 
-# 언어 감지를 먼저 하기 위해 렌더링 순서와 상태 바인딩 제어
 if "current_lang_code" not in st.session_state:
     st.session_state.current_lang_code = "KO"
 
@@ -188,7 +187,7 @@ T = LOCALIZED_TEXT[st.session_state.current_lang_code]
 
 c_menu, c_search, c_right = st.columns([3, 4, 5])
 
-# 검색 키워드는 고정
+# 검색 키워드 사전
 SEARCH_KEYWORDS = {
     0: ["홈", "대회", "소개", "뉴스", "소식", "경기", "갤러리", "영상", "home", "accueil", "首页", "ホーム"],
     1: ["선수", "참가", "신청", "등록", "결제", "접수", "form", "register", "inscription", "报名", "申し込み"],
@@ -225,7 +224,6 @@ with c_menu:
 with c_right:
     sub_lang, sub_buttons = st.columns([4, 6])
     with sub_lang:
-        # 세션에 저장된 언어 코드로 인덱스 역추적하여 기본값 설정
         lang_names = list(LANG_DICT.keys())
         lang_codes = list(LANG_DICT.values())
         default_lang_idx = lang_codes.index(st.session_state.current_lang_code)
@@ -289,7 +287,6 @@ if search_query:
 # -------------------------------------------------------------------------
 if st.session_state.menu_idx == 0:
     st.markdown("## 🏁 Upcoming Events & Overview")
-    
     col_text, col_video, col_intro, col_photo = st.columns([3, 3, 3, 3])
     
     with col_text:
@@ -311,19 +308,17 @@ if st.session_state.menu_idx == 0:
 
     with col_photo:
         st.markdown(f"### {T['photo']}")
-        
         gallery_images = [
             {"path": "skimo_race_1.jpg", "caption": "❄️ 레이스 현장 1"},
             {"path": "skimo_race_2.jpg", "caption": "🏅 레이스 현장 2"},
             {"path": "skimo_race_3.jpg", "caption": "🎉 레이스 현장 3"}
         ]
-        
         photo_idx = st.radio("📸 사진 선택", [1, 2, 3], horizontal=True, label_visibility="collapsed")
         selected_photo = gallery_images[photo_idx - 1]
         
         try:
             st.image(selected_photo["path"], use_container_width=True)
-        except Exception as e:
+        except:
             import urllib.parse
             encoded_filename = urllib.parse.quote(selected_photo["path"])
             github_raw_url = f"https://raw.githubusercontent.com/pyminno12/skimo-website/main/{encoded_filename}"
@@ -353,10 +348,20 @@ if st.session_state.menu_idx == 0:
     st.markdown("</div>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# [콘텐츠 분기 2] 선수 참가 신청 (menu_idx == 1)
+# [콘텐츠 분기 2] 선수 참가 신청 (menu_idx == 1) - 이미지 변경 완료
 # -------------------------------------------------------------------------
 elif st.session_state.menu_idx == 1:
     st.markdown(f"## {T['menu'][1]}")
+    
+    # [변경 사항] 레이아웃 가독성을 위해 상단 폼 내부에 업로드해주신 레이스 서포트 이미지 배치
+    try:
+        st.image("skimo_race_4.avif", use_container_width=True)
+    except:
+        try:
+            st.image("https://raw.githubusercontent.com/pyminno12/skimo-website/main/skimo_race_4.avif", use_container_width=True)
+        except:
+            st.info("🏔️ Milano Cortina 2026 Ski Mountaineering Race")
+            
     with st.form("global_reg_form"):
         p_name = st.text_input("Name")
         p_nation = st.text_input("Nationality")
