@@ -16,12 +16,30 @@ BG_IMAGES = [
     "https://images.unsplash.com/photo-1482867996988-2faec3cbb4f9?auto=format&fit=crop&w=1800&q=80"   
 ]
 
+# 시스템 구동 상태 상태 정의
 if "menu_idx" not in st.session_state:
     st.session_state.menu_idx = 0
-if "user_db" not in st.session_state:
-    st.session_state.user_db = {"admin": "1234", "skimo": "skimo123"}
 if "logged_in_user" not in st.session_state:
     st.session_state.logged_in_user = None
+
+# ------------------------------------------
+# [도메인 모델 구조화]: 세션 내 데이터 설계
+# ------------------------------------------
+
+# A. 사용자 및 권한 도메인 (Judge & Auth Domain)
+if "user_db" not in st.session_state:
+    st.session_state.user_db = {
+        "admin": {"pw": "1234", "role": "ADMIN"},
+        "skimo": {"pw": "skimo123", "role": "JUDGE"}
+    }
+
+# B. 선수 및 경기/기록 데이터 통합 도메인 (Athlete & Telemetry Domain)
+if "athletes_domain" not in st.session_state:
+    st.session_state.athletes_domain = {
+        "101": {"Name": "김민우", "Team": "KOREA", "Category": "Sprint", "Status": "RACING", "CP1": "10:15:20", "CP2": "--:--:--", "Penalty_Sec": 0, "Final_Record": "--:--:--"},
+        "102": {"Name": "Alex Smith", "Team": "USA", "Category": "Individual", "Status": "RACING", "CP1": "10:14:05", "CP2": "10:45:12", "Penalty_Sec": 0, "Final_Record": "--:--:--"},
+        "103": {"Name": "Chloe", "Team": "FRANCE", "Category": "Vertical", "Status": "RACING", "CP1": "10:16:55", "CP2": "10:49:30", "Penalty_Sec": 10, "Final_Record": "--:--:--"},
+    }
 
 selected_bg = BG_IMAGES[st.session_state.menu_idx]
 
@@ -134,7 +152,7 @@ LOCALIZED_TEXT = {
     "JA": {
         "title": "SKIMO KOREA", "subtitle": "山岳スキー情報ポータル",
         "menu": ["大会ホーム", "選手参加申し込み", "リアルタイム順位表", "🔐 審判/管理者パネル"],
-        "desc": "本大会は国際山岳スキー連盟(ISMF)の規則に準拠しており、フィールド審判システムと同期して世界中にリアルタイムでリザルトを配信します。",
+        "desc": "本大会は国際山岳スキー連盟(ISMF)の規則에 준거하고 있으며、フィールド審判システムと同期して世界中にリアルタイムでリザルトを配信します。",
         "video": "📺 競技種目のご案内", "intro_video": "⛷️ 山岳スキーとは？", "photo": "📸 オリンピックギャラリー", "pay": "💳 参加申し込みと安全決済",
         "news_title": "📰 ニュース&ストーリー", "search_holder": "🔍 検索キーワードを入力...", "notice": "📢 お知らせ", "auth": "👤 ログイン/会員登録"
     }
@@ -151,9 +169,9 @@ def auth_dialog():
         login_id = st.text_input("아이디", key="login_id")
         login_pw = st.text_input("비밀번호", type="password", key="login_pw")
         if st.button("로그인 완료", use_container_width=True):
-            if login_id in st.session_state.user_db and st.session_state.user_db[login_id] == login_pw:
+            if login_id in st.session_state.user_db and st.session_state.user_db[login_id]["pw"] == login_pw:
                 st.session_state.logged_in_user = login_id
-                st.success(f"🎉 {login_id}님, 환영합니다!")
+                st.success(f"🎉 {login_id}님, 환영합니다! ({st.session_state.user_db[login_id]['role']} 권한)")
                 time.sleep(1)
                 st.rerun()
             else:
@@ -171,11 +189,12 @@ def auth_dialog():
             elif new_pw != new_pw_confirm:
                 st.error("❌ 비밀번호 확인이 일치하지 않습니다.")
             else:
-                st.session_state.user_db[new_id] = new_pw
+                # 기본으로 일반 JUDGE 권한 부여
+                st.session_state.user_db[new_id] = {"pw": new_pw, "role": "JUDGE"}
                 st.success("📝 회원가입이 완료되었습니다! 로그인 탭에서 로그인해 주세요.")
 
 # ==========================================
-# 3. 상단 레이아웃 배치
+# 3. 상단 레이아웃 배치 및 검색 엔진
 # ==========================================
 st.markdown('<div class="custom-header-bg">', unsafe_allow_html=True)
 st.markdown('<div class="centered-wrapper">', unsafe_allow_html=True)
@@ -187,7 +206,6 @@ T = LOCALIZED_TEXT[st.session_state.current_lang_code]
 
 c_menu, c_search, c_right = st.columns([3, 4, 5])
 
-# 검색 키워드 사전
 SEARCH_KEYWORDS = {
     0: ["홈", "대회", "소개", "뉴스", "소식", "경기", "갤러리", "영상", "home", "accueil", "首页", "ホーム"],
     1: ["선수", "참가", "신청", "등록", "결제", "접수", "form", "register", "inscription", "报名", "申し込み"],
@@ -265,22 +283,9 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 5. 세션 데이터 및 메인 스페이스 바인딩
+# 5. 메인 뷰 컴포넌트 분기 관리
 # ==========================================
-if "athletes" not in st.session_state:
-    st.session_state.athletes = [
-        {"BIB": "101", "Name": "김민우", "Team": "KOREA", "Status": "RACING", "CP1": "10:15:20", "CP2": "--:--:--", "Penalty": "None"},
-        {"BIB": "102", "Name": "Alex Smith", "Team": "USA", "Status": "RACING", "CP1": "10:14:05", "CP2": "10:45:12", "Penalty": "None"},
-        {"BIB": "103", "Name": "Chloe", "Team": "FRANCE", "Status": "RACING", "CP1": "10:16:55", "CP2": "10:49:30", "Penalty": "None"},
-    ]
-
 st.markdown('<div class="content-box">', unsafe_allow_html=True)
-
-if st.session_state.logged_in_user:
-    st.toast(f"🔒 {st.session_state.logged_in_user} Securing Connection")
-
-if search_query:
-    st.success(f"🔍 '{search_query}'")
 
 # -------------------------------------------------------------------------
 # [콘텐츠 분기 1] 대회 홈 화면 (menu_idx == 0)
@@ -348,12 +353,11 @@ if st.session_state.menu_idx == 0:
     st.markdown("</div>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# [콘텐츠 분기 2] 선수 참가 신청 (menu_idx == 1) - 이미지 변경 완료
+# [콘텐츠 분기 2] 선수 참가 신청 (menu_idx == 1)
 # -------------------------------------------------------------------------
 elif st.session_state.menu_idx == 1:
     st.markdown(f"## {T['menu'][1]}")
     
-    # [변경 사항] 레이아웃 가독성을 위해 상단 폼 내부에 업로드해주신 레이스 서포트 이미지 배치
     try:
         st.image("skimo_race_4.avif", use_container_width=True)
     except:
@@ -368,24 +372,97 @@ elif st.session_state.menu_idx == 1:
         p_event = st.selectbox("Event Category", ["Sprint", "Individual", "Vertical"])
         st.metric("Registration Fee", "30,000 KRW")
         submit_btn = st.form_submit_button(T["pay"])
+        
         if submit_btn and p_name:
-            new_member = {"BIB": str(100 + len(st.session_state.athletes)+1), "Name": p_name, "Team": p_nation, "Status": "RACING", "CP1": "--:--:--", "CP2": "--:--:--", "Penalty": "None"}
-            st.session_state.athletes.append(new_member)
-            st.success("Registration Successful!")
+            # 도메인 아키텍처 규칙에 맞춰 새로운 고유 BIB 배정 및 엔티티 필드 생성
+            next_bib = str(100 + len(st.session_state.athletes_domain) + 1)
+            st.session_state.athletes_domain[next_bib] = {
+                "Name": p_name,
+                "Team": p_nation,
+                "Category": p_event,
+                "Status": "RACING",
+                "CP1": "--:--:--",
+                "CP2": "--:--:--",
+                "Penalty_Sec": 0,
+                "Final_Record": "--:--:--"
+            }
+            st.success(f"🎉 성공적으로 신청되었습니다! 배정된 배번호(BIB)는 [{next_bib}] 입니다.")
 
 # -------------------------------------------------------------------------
 # [콘텐츠 분기 3] 실시간 리더보드 (menu_idx == 2)
 # -------------------------------------------------------------------------
 elif st.session_state.menu_idx == 2:
     st.markdown(f"## {T['menu'][2]}")
-    df = pd.DataFrame(st.session_state.athletes)
+    
+    # 딕셔너리로 설계된 도메인 모델 데이터를 판다스 데이터프레임으로 변환
+    data_list = []
+    for bib, info in st.session_state.athletes_domain.items():
+        row = {"BIB": bib}
+        row.update(info)
+        data_list.append(row)
+        
+    df = pd.DataFrame(data_list)
+    
+    # 가독성을 위해 컬럼 배치 순서 재조정
+    df = df[["BIB", "Name", "Team", "Category", "Status", "CP1", "CP2", "Penalty_Sec", "Final_Record"]]
     st.dataframe(df.set_index("BIB"), use_container_width=True)
 
 # -------------------------------------------------------------------------
-# [콘텐츠 분기 4] 심판 패널 (menu_idx == 3)
+# [콘텐츠 분기 4] 🔐 심판/관리자 패널 (menu_idx == 3) - 도메인 바인딩 실감화
 # -------------------------------------------------------------------------
 elif st.session_state.menu_idx == 3:
     st.markdown(f"## {T['menu'][3]}")
-    st.info("System operational. Field telemetry bridge secure.")
+    
+    # 로그인 여부 및 도메인 권한 체크 (ADMIN 혹은 JUDGE 권한만 접근 허용)
+    current_user = st.session_state.logged_in_user
+    if current_user is None:
+        st.warning("⚠️ 이 패널은 현장 심판 및 관리자 전용입니다. 먼저 로그인을 완료해 주세요.")
+    else:
+        user_role = st.session_state.user_db[current_user]["role"]
+        st.write(f"💼 접속 계정: **{current_user}** | 🛡️ 시스템 권한: `{user_role}`")
+        
+        st.markdown("<hr style='border-color: rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
+        st.subheader("⏱️ 경기 현장 데이터 원격 제어 (Live Telemetry Controller)")
+        
+        # 도메인 모델 협력: 심판이 입력창에서 선수의 상태와 체크포인트를 즉각 변환하도록 연결
+        col_select, col_edit = st.columns([4, 8])
+        
+        with col_select:
+            st.write("📋 현재 출전 선수 명단")
+            bib_list = list(st.session_state.athletes_domain.keys())
+            selected_bib = st.selectbox("수정할 선수의 배번호(BIB) 선택", bib_list)
+            
+            target_athlete = st.session_state.athletes_domain[selected_bib]
+            st.info(f"선수명: {target_athlete['Name']} ({target_athlete['Team']})\n\n종목: {target_athlete['Category']}")
+            
+        with col_edit:
+            st.write("⚙️ 실시간 선수 상태 및 계측 데이터 업데이트")
+            
+            # 선수 레이스 상태 값 객체 제어
+            status_options = ["RACING", "FINISHED", "DNF (기권)", "DSQ (실격)"]
+            current_status_idx = status_options.index(target_athlete["Status"]) if target_athlete["Status"] in status_options else 0
+            new_status = st.selectbox("레이스 상태 설정", status_options, index=current_status_idx)
+            
+            # CP 기록 데이터 제어
+            c1, c2 = st.columns(2)
+            with c1:
+                new_cp1 = st.text_input("Checkpoint 1 통과 시간", value=target_athlete["CP1"])
+            with c2:
+                new_cp2 = st.text_input("Checkpoint 2 통과 시간", value=target_athlete["CP2"])
+                
+            # 페널티 도메인 객체 제어
+            new_penalty = st.number_input("부과할 페널티 시간 (초 단위)", min_value=0, value=int(target_athlete["Penalty_Sec"]), step=5)
+            
+            if st.button("🚨 변경 사항 경기 데이터베이스에 동기화", use_container_width=True):
+                # 도메인 모델 데이터 업데이트 진행
+                st.session_state.athletes_domain[selected_bib]["Status"] = new_status
+                st.session_state.athletes_domain[selected_bib]["CP1"] = new_cp1
+                st.session_state.athletes_domain[selected_bib]["CP2"] = new_cp2
+                st.session_state.athletes_domain[selected_bib]["Page"] = new_cp2
+                st.session_state.athletes_domain[selected_bib]["Penalty_Sec"] = new_penalty
+                
+                st.success(f"✅ BIB {selected_bib} ({target_athlete['Name']}) 선수의 경기 기록이 실시간 도메인 모델에 반영되었습니다! 리더보드를 확인해 보세요.")
+                time.sleep(1)
+                st.rerun()
 
 st.markdown('</div>', unsafe_allow_html=True)
