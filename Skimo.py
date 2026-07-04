@@ -4,11 +4,11 @@ from datetime import datetime
 import time
 
 # ==========================================
-# 1. 페이지 설정 및 레이아웃 규격 최적화
+# 1. 페이지 설정 및 글로벌 상태 정의
 # ==========================================
 st.set_page_config(page_title="SKIMO KOREA", page_icon="🏔️", layout="wide")
 
-# 배경 이미지 링크 매핑
+# 배경 이미지 풀 (메뉴 전환 시 동적 배경 변경용)
 BG_IMAGES = [
     "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80",  
     "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=1800&q=80",  
@@ -17,24 +17,23 @@ BG_IMAGES = [
     "https://images.unsplash.com/photo-1518098268026-4e43a1a009de?auto=format&fit=crop&w=1800&q=80"   
 ]
 
-# 시스템 구동 상태 상태 정의
 if "menu_idx" not in st.session_state:
     st.session_state.menu_idx = 0
 if "logged_in_user" not in st.session_state:
     st.session_state.logged_in_user = None
 
 # ------------------------------------------
-# [도메인 모델 구조화]: 세션 내 데이터 설계
+# [메모리 백엔드 도메인 데이터셋 세팅]
 # ------------------------------------------
 
-# A. 사용자 및 권한 도메인 (Judge & Auth Domain)
+# A. 심판 인증 시스템 데이터
 if "user_db" not in st.session_state:
     st.session_state.user_db = {
         "admin": {"pw": "1234", "role": "ADMIN"},
         "skimo": {"pw": "skimo123", "role": "JUDGE"}
     }
 
-# B. 선수 및 경기/기록 데이터 통합 도메인 (Athlete & Telemetry Domain)
+# B. 실시간 계측/타이밍 데이터 (Telemetry 데이터 모델)
 if "athletes_domain" not in st.session_state:
     st.session_state.athletes_domain = {
         "101": {"Name": "김민우", "Team": "KOREA", "Category": "Sprint", "Status": "RACING", "CP1": "10:15:20", "CP2": "--:--:--", "Penalty_Sec": 0, "Final_Record": "--:--:--"},
@@ -42,7 +41,7 @@ if "athletes_domain" not in st.session_state:
         "103": {"Name": "Chloe", "Team": "FRANCE", "Category": "Vertical", "Status": "RACING", "CP1": "10:16:55", "CP2": "10:49:30", "Penalty_Sec": 10, "Final_Record": "--:--:--"},
     }
 
-# C-1. 글로벌 공지사항 데이터 (Notice Domain)
+# C. 다국어 공지사항 아카이브 데이터
 if "notice_domain" not in st.session_state:
     st.session_state.notice_domain = [
         {
@@ -58,10 +57,11 @@ if "notice_domain" not in st.session_state:
         }
     ]
 
-# [신규 추가] C-2. 홈 화면용 글로벌 최신 뉴스 데이터 (Home News Domain)
+# D. 글로벌 실시간 다국어 뉴스 및 AI 요약 아카이브 (AI Summarizer 통합형 도메인)
 if "home_news_domain" not in st.session_state:
     st.session_state.home_news_domain = [
         {
+            "id": "news_01",
             "date": "2026-06-18",
             "link": "https://www.ismf-ski.org/",
             "title": {
@@ -71,9 +71,14 @@ if "home_news_domain" not in st.session_state:
                 "IT": "🚀 Olimpiadi Invernali delle Alpi Francesi 2030: Saranno annunciati i regolamenti dettagliati dello Skimo",
                 "ZH": "🚀 2030年法国阿尔卑斯冬季奥运会：滑雪登山详细项目规则即将公布",
                 "JA": "🚀 2030年フランス・アルプス冬季オリンピック、山岳スキー詳細種目規定がまもなく発表予定"
+            },
+            "ai_summary": {
+                "KO": "🤖 **AI 요약:** 2030 프랑스 동계 올림픽 조직위와 ISMF가 산악스키 정식 종목 채택에 따른 세부 중계 및 페널티 규정을 내달 확정합니다. 이번 규정은 가파른 업힐 전환 구간의 공정성 확보에 초점을 맞추고 있습니다.\n\n💡 **핵심 키워드:** `#2030동계올림픽` `#ISMF규정` `#산악스키정식종목`",
+                "EN": "🤖 **AI Summary:** The 2030 French Winter Olympics Committee and ISMF will finalize detailed broadcasting and penalty regulations next month. This update focuses heavily on ensuring fairness during steep uphill transition zones.\n\n💡 **Keywords:** `#WinterOlympics2030` `#ISMF_Rules` `#SkimoOfficial`"
             }
         },
         {
+            "id": "news_02",
             "date": "2026-06-12",
             "link": "https://www.ismf-ski.org/",
             "title": {
@@ -83,9 +88,14 @@ if "home_news_domain" not in st.session_state:
                 "IT": "❄️ La Federazione Asiatica Skimo conferma il campo di sviluppo giovanile invernale a Pyeongchang",
                 "ZH": "❄️ 亚洲滑雪登山联盟确认将在平昌举办冬季青少年选手培育训练营",
                 "JA": "❄️ アジア山岳スキー連盟、青少年選手育成のための冬季キャンプを平昌で開催確定"
+            },
+            "ai_summary": {
+                "KO": "🤖 **AI 요약:** 아시아 청소년 산악스키 유망주들을 위한 집중 트레이닝 캠프가 대한민국 평창 알펜시아에서 개최됩니다. 국제 기술 위원들이 직접 패트롤 및 장비 전환 기술을 지도할 예정입니다.\n\n💡 **핵심 키워드:** `#평창동계캠프` `#청소년육성` `#아시아산악스키`",
+                "EN": "🤖 **AI Summary:** An intensive training camp for promising Asian youth Skimo athletes will be held in Pyeongchang Alpensia, South Korea. International technical delegates will directly mentor patrol and gear transition techniques.\n\n💡 **Keywords:** `#PyeongchangCamp` `#YouthDevelopment` `#AsianSkimo`"
             }
         },
         {
+            "id": "news_03",
             "date": "2026-06-05",
             "link": "https://www.ismf-ski.org/",
             "title": {
@@ -94,24 +104,24 @@ if "home_news_domain" not in st.session_state:
                 "FR": "🏅 L'équipe nationale de Skimo part pour un entraînement hors saison en Nouvelle-Zélande",
                 "IT": "🏅 La squadra nazionale di Skimo parte per l'allenamento fuori stagione in Nuova Zelanda",
                 "ZH": "🏅 韩国滑雪登山国家队启程前往新西兰展开新赛季海外集训",
-                "JA": "🏅 山岳スキー大韓民国国家代表チーム、ニュージーランド海外遠征トレーニングのため 출국"
+                "JA": "🏅 山岳スキー大韓民国国家代表チーム、ニュージーランド海外遠征トレーニングのため出국의 투へ"
+            },
+            "ai_summary": {
+                "KO": "🤖 **AI 요약:** 대한민국 산악스키 국가대표 선수단이 설질 조건이 우수한 뉴질랜드 남섬 인터내셔널 스키 필드로 비시즌 전지훈련을 떠납니다. 해발 고도 2,000m 이상에서의 산소 적응 훈련에 집중합니다.\n\n💡 **핵심 키워드:** `#국가대표팀` `#뉴질랜드전지훈련` `#고산적응`",
+                "EN": "🤖 **AI Summary:** The South Korean National Skimo Team departs for off-season training at the International Ski Field in the South Island of New Zealand, focusing on high-altitude oxygen adaptation over 2,000m.\n\n💡 **Keywords:** `#NationalTeam` `#NewZealandTraining` `#AltitudeAdaptation`"
             }
         }
     ]
 
+# 동적 스타일링에 쓰일 배경 이미지 바인딩
 selected_bg = BG_IMAGES[st.session_state.menu_idx] if st.session_state.menu_idx < len(BG_IMAGES) else BG_IMAGES[0]
 
-# 스타일 및 컴포넌트 커스텀 CSS 적용
+# UI 오버레이 디자인 CSS
 st.markdown(f"""
     <style>
     header[data-testid="stHeader"] {{ display: none !important; }}
     .stAppDeployDropdown {{ display: none !important; }}
-    
-    div[data-testid="stSelectbox"] div[role="combobox"] {{ cursor: pointer !important; }}
-    div[data-testid="stSelectbox"] input {{ cursor: pointer !important; caret-color: transparent !important; }}
-    div[data-baseweb="popover"] li {{ cursor: pointer !important; }}
     [data-testid="stSidebar"] {{ display: none !important; }}
-    
     .block-container {{ padding-top: 0rem; padding-bottom: 0rem; padding-left: 0rem; padding-right: 0rem; }}
     
     .stApp {{
@@ -122,42 +132,35 @@ st.markdown(f"""
     .centered-wrapper {{ max-width: 1200px; margin: 0 auto; padding: 0 20px; }}
     .custom-header-bg {{ background-color: rgba(15, 32, 39, 0.4); backdrop-filter: blur(5px); width: 100%; padding: 10px 0; }}
     
-    .notice-card {{
-        background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px; padding: 20px; margin-bottom: 15px; transition: transform 0.2s, background 0.2s;
-    }}
-    .notice-card:hover {{ background: rgba(255, 255, 255, 0.09); transform: translateY(-2px); }}
-    .notice-badge {{ background-color: #00c6ff; color: #111; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 10px; }}
-    .notice-date {{ color: #cbd5e1; font-size: 13px; }}
-    .notice-title {{ font-size: 18px; font-weight: 600; color: #ffffff; margin-top: 8px; margin-bottom: 8px; }}
-    .notice-content {{ font-size: 14px; color: #e2e8f0; line-height: 1.6; }}
-    
-    div.stButton > button {{
-        background: transparent !important; color: white !important; border: none !important; padding: 0px !important;
-        margin-left: 20px !important; font-size: 14px !important; font-weight: 500 !important; transition: color 0.2s !important;
-    }}
-    div.stButton > button:hover {{ color: #00c6ff !important; background: transparent !important; }}
-    div.stButton > button:focus {{ color: #00c6ff !important; box-shadow: none !important; }}
-    
     .hero-section {{ height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; }}
-    .hero-title {{ font-size: 42px; font-weight: 800; text-shadow: 3px 3px 8px rgba(0,0,0,0.9); margin-bottom: 5px; letter-spacing: 1px; }}
-    .hero-subtitle {{ font-size: 18px; font-weight: 500; text-shadow: 2px 2px 4px rgba(0,0,0,0.7); color: #00c6ff; }}
+    .hero-title {{ font-size: 42px; font-weight: 800; text-shadow: 3px 3px 8px rgba(0,0,0,0.9); margin-bottom: 5px; }}
+    .hero-subtitle {{ font-size: 18px; font-weight: 500; color: #00c6ff; text-shadow: 2px 2px 4px rgba(0,0,0,0.7); }}
     
     .content-box {{ 
         max-width: 1200px; margin: 0 auto 50px auto; padding: 30px; background: rgba(255, 255, 255, 0.07);
-        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff;
+        backdrop-filter: blur(10px); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff;
     }}
     
-    .news-list-item {{ padding: 14px 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.15); display: flex; justify-content: space-between; align-items: center; }}
-    .news-list-item:last-child {{ border-bottom: none; }}
-    .news-list-title {{ font-size: 15px; font-weight: 500; color: #e2e8f0; text-decoration: none; transition: color 0.2s; }}
-    .news-list-title:hover {{ color: #00c6ff; }}
-    .news-list-meta {{ font-size: 13px; color: #cbd5e1; white-space: nowrap; }}
+    /* 네비게이션용 투명 버튼 스타일 유지 */
+    div.stButton > button {{
+        background: transparent !important; color: white !important; border: none !important;
+        font-size: 14px !important; font-weight: 500 !important;
+    }}
+    div.stButton > button:hover {{ color: #00c6ff !important; }}
+    
+    /* 뉴스 리스트 전용 텍스트 스타일 수정 */
+    .news-flex-container {{ display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 5px 0; }}
+    .news-title-link {{ font-size: 15px; font-weight: 500; color: #e2e8f0; text-decoration: none; transition: color 0.2s; }}
+    .news-title-link:hover {{ color: #00c6ff; cursor: pointer; }}
+    .news-date-span {{ font-size: 13px; color: #cbd5e1; white-space: nowrap; }}
+    
+    .notice-card {{ background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 20px; margin-bottom: 15px; }}
+    .notice-badge {{ background-color: #00c6ff; color: #111; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 10px; }}
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. 6개국 다국어 번역 사전
+# 2. 6개국 로컬라이제이션 매핑 아키텍처
 # ==========================================
 LANG_DICT = {
     "한국어 (KO)": "KO", "English (EN)": "EN", "Français (FR)": "FR",       
@@ -170,221 +173,223 @@ LOCALIZED_TEXT = {
         "menu": ["대회 홈", "선수 참가 신청", "실시간 리더보드 (LIVE)", "🔐 심판/관리자 패널", "📢 글로벌 공지사항"],
         "desc": "본 대회는 국제산악스키연맹(ISMF) 규정을 준수하며, field 심판 시스템과 동기화되어 실시간 기록을 전 세계에 생중계합니다.",
         "video": "📺 경기 종목 안내", "intro_video": "⛷️ 산악스키 소개", "photo": "📸 올림픽 현장 갤러리", "pay": "💳 참가 신청 및 안전 결제",
-        "news_title": "📰 News & Stories (글로벌 최신 소식)", "search_holder": "🔍 검색어를 입력하세요...", "notice": "📢 공지사항", "auth": "👤 로그인/회원가입"
+        "news_title": "📰 News & Stories (글로벌 최신 소식)", "search_holder": "🔍 검색어를 입력하세요...", "notice": "📢 공지사항", "auth": "👤 로그인/회원가입",
+        "ai_btn": "🤖 AI 요약보기", "ai_modal_title": "⚡ Generative AI 실시간 요약 브리핑"
     },
     "EN": {
         "title": "SKIMO KOREA", "subtitle": "Ski Mountaineering Information Portal",
         "menu": ["Home", "Athlete Registration", "Live Leaderboard", "🔐 Judge/Admin Panel", "📢 Global Notice"],
         "desc": "This tournament complies with ISMF regulations. Scoring and penalties are aggregated in real-time globally via the field web app.",
         "video": "📺 Skimo Rules Video", "intro_video": "⛷️ What is Skimo?", "photo": "📸 Olympic Action Gallery", "pay": "💳 Register & Secure Pay",
-        "news_title": "📰 News & Stories (Global Latest News)", "search_holder": "🔍 Search information...", "notice": "📢 Notice", "auth": "👤 Login/Register"
-    },
-    "FR": {
-        "title": "SKIMO CORÉE", "subtitle": "Portail d'information sur le ski-alpinisme",
-        "menu": ["Accueil", "Inscription des athlètes", "Tableau croisé en direct", "🔐 Panel des juges/admin", "📢 Annonces Globales"],
-        "desc": "Ce tournoi est conforme aux règlements de l'ISMF. Les scores et les pénalités sont agrégés en temps réel via l'application web de terrain.",
-        "video": "📺 Vidéo des règles", "intro_video": "⛷️ Qu'est-ce que le Skimo?", "photo": "📸 Galerie Olympique", "pay": "💳 S'inscrire et payer",
-        "news_title": "📰 Nouvelles et histoires", "search_holder": "🔍 Rechercher des informations...", "notice": "📢 Annonces", "auth": "👤 Connexion/S'inscrire"
-    },
-    "IT": {
-        "title": "SKIMO COREA", "subtitle": "Portale di informazioni sullo sci alpinismo",
-        "menu": ["Home", "Iscrizione Atleti", "Classifica in Tempo Reale", "🔐 Pannello Giudici/Admin", "📢 Avvisi Globali"],
-        "desc": "Questo torneo é conforme ai regolamenti ISMF. I punteggi e le penalità vengono aggregati in tempo reale tramite l'app web sul campo.",
-        "video": "📺 Video del regolamento", "intro_video": "⛷️ Cos'è lo Skimo?", "photo": "📸 Galleria d'azione olimpica", "pay": "💳 Iscriviti e paga",
-        "news_title": "📰 Notizie e storie", "search_holder": "🔍 Cerca informazioni...", "notice": "📢 Avvisi", "auth": "👤 Accedi/Registrati"
-    },
-    "ZH": {
-        "title": "SKIMO 韩国", "subtitle": "滑雪登山信息门户网站",
-        "menu": ["首页", "运动员报名", "实时排行榜", "🔐 裁判/管理员面板", "📢 全球公告"],
-        "desc": "本次比赛遵守国际滑雪登山联盟(ISMF)规定。得分和处罚通过现场网络应用全球实时汇总。",
-        "video": "📺 比赛规则视频", "intro_video": "⛷️ 什么是滑雪登山?", "photo": "📸 奥运现场画廊", "pay": "💳 立即报名与安全支付",
-        "news_title": "📰 新闻与故事", "search_holder": "🔍 输入搜索内容...", "notice": "📢 官方公告", "auth": "👤 登录/注册"
-    },
-    "JA": {
-        "title": "SKIMO KOREA", "subtitle": "山岳スキー情報ポータル",
-        "menu": ["大会ホーム", "選手参加申し込み", "リアルタイム順位表", "🔐 審判/管理者パネル", "📢 グローバルお知らせ"],
-        "desc": "本大会は国際山岳スキー連盟(ISMF)の規則に準拠しており、フィールド審判システムと同期して世界中にリアルタイムでリザルトを配信します。",
-        "video": "📺 競技種目のご案内", "intro_video": "⛷️ 山岳スキーとは？", "photo": "📸 オリンピックギャラリー", "pay": "💳 参加申し込みと安全決済",
-        "news_title": "📰 ニュース&ストーリー", "search_holder": "🔍 検索キーワードを入力...", "notice": "📢 お知らせ", "auth": "👤 ログイン/会員登録"
+        "news_title": "📰 News & Stories (Global Latest News)", "search_holder": "🔍 Search information...", "notice": "📢 Notice", "auth": "👤 Login/Register",
+        "ai_btn": "🤖 View AI Summary", "ai_modal_title": "⚡ Generative AI Real-time Briefing"
     }
 }
 
-# 계정 관리 대화상자
+# 다국어 기본 안전장치 (Fallback 매핑)
+if "current_lang_code" not in st.session_state:
+    st.session_state.current_lang_code = "KO"
+if st.session_state.current_lang_code not in LOCALIZED_TEXT:
+    st.session_state.current_lang_code = "KO"
+
+T = LOCALIZED_TEXT[st.session_state.current_lang_code]
+
+# 계정 인증 팝업 모달 다이얼로그
 @st.dialog("🔐 SKIMO KOREA 계정 관리")
 def auth_dialog():
     tab1, tab2 = st.tabs(["👤 로그인", "📝 회원가입"])
     with tab1:
-        st.write("포털 서비스를 위해 로그인해 주세요.")
         login_id = st.text_input("아이디", key="login_id")
         login_pw = st.text_input("비밀번호", type="password", key="login_pw")
         if st.button("로그인 완료", use_container_width=True):
             if login_id in st.session_state.user_db and st.session_state.user_db[login_id]["pw"] == login_pw:
                 st.session_state.logged_in_user = login_id
-                st.success(f"🎉 {login_id}님, 환영합니다!")
-                time.sleep(1)
+                st.success("로그인 성공!")
+                time.sleep(0.5)
                 st.rerun()
-            else: st.error("❌ 비밀번호가 일치하지 않습니다.")
+            else:
+                st.error("오류: 계정 정보를 확인하세요.")
+
+# [새로 추가된 기능] 생성형 AI 기반 뉴스 요약 모달 창 정의
+@st.dialog("🎯 AI 요약 브리핑")
+def ai_summary_dialog(news_item, lang_code):
+    st.markdown(f"### {T['ai_modal_title']}")
+    st.write("---")
+    
+    # 선택한 언어의 뉴스 제목 표시
+    current_title = news_item["title"].get(lang_code, news_item["title"]["EN"])
+    st.markdown(f"**📌 대상 뉴스:** {current_title}")
+    
+    # 생성형 AI 스트리밍 구동 효과 연출
+    with st.spinner("LLM 인퍼런스 엔진 가동 중..."):
+        time.sleep(0.7)
+    
+    # 언어에 맞는 AI 요약 바인딩 (영어 외 국가는 기본 영어 서머리 제공 정책)
+    summary_content = news_item["ai_summary"].get(lang_code, news_item["ai_summary"]["EN"])
+    st.markdown(summary_content)
+    
+    st.write("---")
+    st.link_button("🔗 원문 뉴스 링크 열기 (ISMF)", news_item["link"], use_container_width=True)
 
 # ==========================================
-# 3. 상단 네비게이션 및 라우터 제어
+# 3. 글로벌 상단 동적 라우터 바
 # ==========================================
 st.markdown('<div class="custom-header-bg">', unsafe_allow_html=True)
 st.markdown('<div class="centered-wrapper">', unsafe_allow_html=True)
 
-if "current_lang_code" not in st.session_state:
-    st.session_state.current_lang_code = "KO"
-
-T = LOCALIZED_TEXT[st.session_state.current_lang_code]
 c_menu, c_search, c_right = st.columns([3, 4, 5])
 
+# 인덱스 이동 키워드 테이블
 SEARCH_KEYWORDS = {
-    0: ["홈", "대회", "소개", "뉴스", "소식", "경기", "갤러리", "영상", "home", "news"],
+    0: ["홈", "대회", "소개", "뉴스", "home", "news"],
     1: ["선수", "참가", "신청", "등록", "접수"],
-    2: ["실시간", "리더", "보드", "라이브", "순위"],
-    3: ["심판", "관리자", "패널"],
-    4: ["공지", "사항", "알림"]
+    2: ["실시간", "리더", "라이브", "순위", "live"],
+    3: ["심판", "관리자", "패널", "judge"],
+    4: ["공지", "사항", "알림", "notice"]
 }
 
 with c_search:
     search_query = st.text_input("Search", placeholder=T["search_holder"], label_visibility="collapsed")
     if search_query:
         query_clean = search_query.strip().lower()
-        matched_index = None
         for idx, keywords in SEARCH_KEYWORDS.items():
             if any(kw in query_clean for kw in keywords):
-                matched_index = idx
-                break
-        if matched_index is not None and st.session_state.menu_idx != matched_index:
-            st.session_state.menu_idx = matched_index
-            st.rerun()
+                if st.session_state.menu_idx != idx:
+                    st.session_state.menu_idx = idx
+                    st.rerun()
 
 with c_menu:
     menu_list = list(T["menu"])
-    selected_menu_raw = st.selectbox("Menu Select", menu_list, index=st.session_state.menu_idx if st.session_state.menu_idx < len(menu_list) else 0, label_visibility="collapsed")
+    selected_menu_raw = st.selectbox("Menu", menu_list, index=st.session_state.menu_idx if st.session_state.menu_idx < len(menu_list) else 0, label_visibility="collapsed")
     menu_index = menu_list.index(selected_menu_raw)
     if st.session_state.menu_idx != menu_index:
         st.session_state.menu_idx = menu_index
         st.rerun()
-    
+
 with c_right:
     sub_lang, sub_buttons = st.columns([4, 6])
     with sub_lang:
-        selected_lang_name = st.selectbox("Global Select", list(LANG_DICT.keys()), index=list(LANG_DICT.values()).index(st.session_state.current_lang_code), label_visibility="collapsed")
+        selected_lang_name = st.selectbox("Language", list(LANG_DICT.keys()), index=0, label_visibility="collapsed")
         new_lang_code = LANG_DICT[selected_lang_name]
         if st.session_state.current_lang_code != new_lang_code:
             st.session_state.current_lang_code = new_lang_code
             st.rerun()
-        
     with sub_buttons:
-        btn_col1, btn_col2 = st.columns([1, 1])
-        with btn_col1:
-            if st.button(T["notice"], key="notice_top_nav_btn"):
-                st.session_state.menu_idx = 4
+        if st.session_state.logged_in_user is None:
+            if st.button(T["auth"]): auth_dialog()
+        else:
+            if st.button(f"🔓 로그아웃 ({st.session_state.logged_in_user})"):
+                st.session_state.logged_in_user = None
                 st.rerun()
-        with btn_col2:
-            if st.session_state.logged_in_user is None:
-                if st.button(T["auth"], key="auth_btn"): auth_dialog()
-            else:
-                if st.button(f"🔓 로그아웃 ({st.session_state.logged_in_user})", key="logout_btn"):
-                    st.session_state.logged_in_user = None
-                    st.rerun()
 
-st.markdown('</div>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div></div>', unsafe_allow_html=True)
 
-# 히어로 헤더
+# 메인 뷰포트 레이아웃 상자 구동
 st.markdown(f'<div class="centered-wrapper"><div class="hero-section"><div class="hero-title">{T["title"]}</div><div class="hero-subtitle">🏔️ {T["subtitle"]}</div></div></div>', unsafe_allow_html=True)
 st.markdown('<div class="content-box">', unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# [콘텐츠 분기 1] 대회 홈 화면 (menu_idx == 0) - 업데이트 집중 영역!
+# [라우터 메뉴 분기 제어 체계]
 # -------------------------------------------------------------------------
 if st.session_state.menu_idx == 0:
     st.markdown("## 🏁 Upcoming Events & Overview")
     col_text, col_video, col_intro, col_photo = st.columns([3, 3, 3, 3])
     
     with col_text:
-        st.markdown(f"### 📢 Information")
+        st.markdown("### 📢 Information")
         st.write(T["desc"])
-        st.markdown("""
-        * **Location:** Pyeongchang, KOREA
-        * **Sanctioned by:** ISMF
-        * **Scale:** 3,000+ Participants
-        """)
+        st.markdown("* **Location:** Pyeongchang, KOREA\n* **Sanctioned by:** ISMF\n* **Scale:** 3,000+ Participants")
         
     with col_video:
         st.markdown(f"### {T['video']}")
-        st.video("https://youtu.be/KgyX5OjMTyM?si=Uu8mCwLV2X4an8Wk")
+        st.video("https://youtu.be/KgyX5OjMTyM")
 
     with col_intro:
         st.markdown(f"### {T['intro_video']}")
-        st.video("https://youtu.be/nLjES8kuFRg?si=xu3P1kuKedFOdjRl")
+        st.video("https://youtu.be/nLjES8kuFRg")
 
     with col_photo:
         st.markdown(f"### {T['photo']}")
-        try: st.image("https://raw.githubusercontent.com/pyminno12/skimo-website/main/skimo_race_1.jpg", use_container_width=True)
-        except: st.error("⚠️ Image Load Error")
+        gallery_images = [
+            {"path": "skimo_race_1.jpg", "caption": "❄️ 눈보라를 뚫고 올라가는 레이스"},
+            {"path": "skimo_race_2.jpg", "caption": "🏅 영광의 시상대 현장"},
+            {"path": "skimo_race_3.jpg", "caption": "🎉 박진감 넘치는 다운힐 피니시"}
+        ]
+        photo_idx = st.radio("Photo Select", [1, 2, 3], horizontal=True, label_visibility="collapsed")
+        selected_photo = gallery_images[photo_idx - 1]
+        
+        try:
+            st.image(selected_photo["path"], caption=selected_photo["caption"], use_container_width=True)
+        except:
+            import urllib.parse
+            encoded_filename = urllib.parse.quote(selected_photo["path"])
+            github_url = f"https://raw.githubusercontent.com/pyminno12/skimo-website/main/{encoded_filename}"
+            st.image(github_url, caption=selected_photo["caption"], use_container_width=True)
 
-    # [💡 업데이트]: 메인 홈 화면 하단의 NEWS & STORIES 섹션을 글로벌 세션 객체와 바인딩
+    # -------------------------------------------------------------------------
+    # 고도화된 AI News Summarizer 섹션 구현체
+    # -------------------------------------------------------------------------
     st.markdown("<hr style='border-color: rgba(255,255,255,0.15);'>", unsafe_allow_html=True)
     st.markdown(f"## {T['news_title']}")
     
-    st.markdown("<div style='background-color: rgba(255, 255, 255, 0.04); padding: 10px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
-    
     lang_code = st.session_state.current_lang_code
+    
     for item in st.session_state.home_news_domain:
-        # 사용자가 선택한 언어 코드를 파싱하고, 없을 경우 영어(EN)를 디폴트로 매핑
         localized_news_title = item["title"].get(lang_code, item["title"]["EN"])
         
-        st.markdown(f"""
-            <div class="news-list-item">
-                <a href="{item['link']}" target="_blank" class="news-list-title">📌 {localized_news_title}</a>
-                <span class="news-list-meta">📅 {item['date']}</span>
-            </div>
-        """, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+        # 가로 정렬을 위해 스트리먼 컬럼 배치 구조 사용
+        c_news_title, c_news_btn = st.columns([8, 2])
+        
+        with c_news_title:
+            st.markdown(f"""
+                <div class="news-flex-container">
+                    <span class="news-title-link">📌 {localized_news_title}</span>
+                    <span class="news-date-span">📅 {item['date']}</span>
+                </div>
+            """, unsafe_allow_html=True)
+            
+        with c_news_btn:
+            # 뉴스별로 고유한 버튼 생성 후 클릭 시 AI 요약 다이얼로그 호출
+            if st.button(T["ai_btn"], key=f"btn_ai_{item['id']}", use_container_width=True):
+                ai_summary_dialog(item, lang_code)
 
-# [콘텐츠 분기 2] 선수 참가 신청 (menu_idx == 1)
 elif st.session_state.menu_idx == 1:
     st.markdown(f"## {T['menu'][1]}")
-    with st.form("global_reg_form"):
-        p_name = st.text_input("Name")
-        p_nation = st.text_input("Nationality")
-        p_event = st.selectbox("Event Category", ["Sprint", "Individual", "Vertical"])
-        submit_btn = st.form_submit_button(T["pay"])
-        if submit_btn and p_name:
+    with st.form("reg_form"):
+        p_name = st.text_input("Athlete Name")
+        p_nation = st.text_input("Country/Team")
+        p_event = st.selectbox("Category", ["Sprint", "Individual", "Vertical"])
+        if st.form_submit_button(T["pay"]) and p_name:
             next_bib = str(100 + len(st.session_state.athletes_domain) + 1)
             st.session_state.athletes_domain[next_bib] = {"Name": p_name, "Team": p_nation, "Category": p_event, "Status": "RACING", "CP1": "--:--:--", "CP2": "--:--:--", "Penalty_Sec": 0, "Final_Record": "--:--:--"}
-            st.success(f"🎉 배정된 배번호는 [{next_bib}] 입니다.")
+            st.success(f"선수 등록 완료! 배정 배번호: [{next_bib}]")
 
-# [콘텐츠 분기 3] 실시간 리더보드 (menu_idx == 2)
 elif st.session_state.menu_idx == 2:
     st.markdown(f"## {T['menu'][2]}")
     data_list = [{"BIB": b, **i} for b, i in st.session_state.athletes_domain.items()]
     df = pd.DataFrame(data_list)[["BIB", "Name", "Team", "Category", "Status", "CP1", "CP2", "Penalty_Sec", "Final_Record"]]
     st.dataframe(df.set_index("BIB"), use_container_width=True)
 
-# [콘텐츠 분기 4] 🔐 심판/관리자 패널 (menu_idx == 3)
 elif st.session_state.menu_idx == 3:
     st.markdown(f"## {T['menu'][3]}")
-    if st.session_state.logged_in_user is None: st.warning("⚠️ 심판 전용 패널입니다. 로그인을 완료해 주세요.")
+    if st.session_state.logged_in_user is None:
+        st.warning("⚠️ 권한 경고: 심판 계정으로 로그인이 필요합니다.")
     else:
         bib_list = list(st.session_state.athletes_domain.keys())
-        selected_bib = st.selectbox("BIB 선택", bib_list)
-        target = st.session_state.athletes_domain[selected_bib]
-        new_status = st.selectbox("상태 변경", ["RACING", "FINISHED", "DNF", "DSQ"])
-        if st.button("🚨 동기화"):
+        selected_bib = st.selectbox("업데이트할 BIB 선택", bib_list)
+        new_status = st.selectbox("상태 값 변경", ["RACING", "FINISHED", "DNF", "DSQ"])
+        if st.button("🚨 데이터 필드 실시간 동기화"):
             st.session_state.athletes_domain[selected_bib]["Status"] = new_status
-            st.success("반영되었습니다.")
+            st.success(f"배번호 {selected_bib}번 선수의 경기 상태가 {new_status}로 변경 및 동기화되었습니다.")
+            time.sleep(0.5)
             st.rerun()
 
-# [콘텐츠 분기 5] 📢 글로벌 공지사항 및 뉴스 피드 페이지 (menu_idx == 4)
 elif st.session_state.menu_idx == 4:
-    lang_code = st.session_state.current_lang_code
     st.markdown(f"## {T['menu'][4]}")
+    lang_code = st.session_state.current_lang_code
     for item in st.session_state.notice_domain:
         title_text = item["title"].get(lang_code, item["title"]["EN"])
         content_text = item["content"].get(lang_code, item["content"]["EN"])
-        st.markdown(f'<div class="notice-card"><div><span class="notice-badge">{item["category"]}</span><span class="notice-date">📅 {item["date"]}</span></div><div class="notice-title">{title_text}</div><div class="notice-content">{content_text}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="notice-card"><div><span class="notice-badge">{item["category"]}</span><span>📅 {item["date"]}</span></div><div style="font-size:18px; font-weight:600; margin:10px 0;">{title_text}</div><div>{content_text}</div></div>', unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
