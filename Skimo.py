@@ -26,8 +26,6 @@ if "logged_in_user" not in st.session_state:
 # ------------------------------------------
 # [🚨 중요: 브라우저 쿠키/로컬 스토리지 대용 구조 구현]
 # ------------------------------------------
-# Streamlit의 실험적 기능인 컴포넌트나 파일 영구 저장을 사용해 새로고침을 견디도록 설계합니다.
-# 배포 환경에서도 데이터가 유지될 수 있도록 서버 로컬 json 파일을 영구 데이터베이스 허브로 활용합니다.
 DB_FILE = "user_database.json"
 
 def load_user_db():
@@ -35,7 +33,6 @@ def load_user_db():
         with open(DB_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     except FileNotFoundError:
-        # 최초 기본 계정 구조 정의
         initial_db = {
             "admin": {"pw": "1234", "role": "ADMIN"},
             "skimo": {"pw": "skimo123", "role": "JUDGE"}
@@ -90,7 +87,7 @@ if "home_news_domain" not in st.session_state:
                 "JA": "🚀 2030年フランス・アルプス冬季オリンピック、山岳スキー詳細種目規定がまもなく発表予定"
             },
             "ai_summary": {
-                "KO": "🤖 **AI 요약:** 2030 프랑스 동계 올림픽 조직위와 ISMF가 산악스키 정식 종목 채택에 따른 세부 중계 및 페널티 규정을 내달 확정합니다. 이번 규정은 가파른 업힐 전환 구간의 공정성 확보에 초점을 맞추고 있습니다.\n\n💡 **핵심 키워드:** `#2030동계올림픽` `#ISMF규정` `#산악스키정식종목`",
+                "KO": "🤖 **AI 요약:** 2030 프랑스 동계 올림픽 조직위 and ISMF가 산악스키 정식 종목 채택에 따른 세부 중계 및 페널티 규정을 내달 확정합니다. 이번 규정은 가파른 업힐 전환 구간의 공정성 확보에 초점을 맞추고 있습니다.\n\n💡 **핵심 키워드:** `#2030동계올림픽` `#ISMF규정` `#산악스키정식종목`",
                 "EN": "🤖 **AI Summary:** The 2030 French Winter Olympics Committee and ISMF will finalize detailed broadcasting and penalty regulations next month. This update focuses heavily on ensuring fairness during steep uphill transition zones.\n\n💡 **Keywords:** `#WinterOlympics2030` `#ISMF_Rules` `#SkimoOfficial`"
             }
         },
@@ -121,7 +118,7 @@ if "home_news_domain" not in st.session_state:
                 "FR": "🏅 L'équipe nationale de Skimo part pour un entraînement hors saison en Nouvelle-Zélande",
                 "IT": "🏅 La squadra nazionale di Skimo parte per l'allenamento fuori stagione in Nuova Zelanda",
                 "ZH": "🏅 韩国滑雪登山国家队启程前往新西兰展开新赛季海外集训",
-                "JA": "🏅 山岳スキー大韓民국国家대표팀, 뉴질랜드 해외원정 트레이닝을 위해 출국의 투へ"
+                "JA": "🏅 山岳スキー大韓民国国家代表チーム、ニュージーランド海外遠征トレーニングのために出国"
             },
             "ai_summary": {
                 "KO": "🤖 **AI 요약:** 대한민국 산악스키 국가대표 선수단이 설질 조건이 우수한 뉴질랜드 남섬 인터내셔널 스키 필드로 비시즌 전지훈련을 떠납니다. 해발 고도 2,000m 이상에서의 산소 적응 훈련에 집중합니다.\n\n💡 **핵심 키워드:** `#국가대표팀` `#뉴질랜드전지훈련` `#고산적응`",
@@ -175,7 +172,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. 6개국 로컬라이제이션 매핑 아키텍처
+# 2. 6개국 로컬라이제이션 매핑 아키텍처 (보완 완료)
 # ==========================================
 LANG_DICT = {
     "한국어 (KO)": "KO", "English (EN)": "EN", "Français (FR)": "FR",       
@@ -198,16 +195,49 @@ LOCALIZED_TEXT = {
         "video": "📺 Skimo Rules Video", "intro_video": "⛷️ What is Skimo?", "photo": "📸 Olympic Action Gallery", "pay": "💳 Register & Secure Pay",
         "news_title": "📰 News & Stories (Global Latest News)", "search_holder": "🔍 Search information...", "notice": "📢 Notice", "auth": "👤 Login/Register",
         "ai_btn": "🤖 View AI Summary", "ai_modal_title": "⚡ Generative AI Real-time Briefing"
+    },
+    "FR": {
+        "title": "SKIMO KOREA", "subtitle": "Portail d'information sur le ski-alpinisme",
+        "menu": ["Accueil", "Inscription des athlètes", "Classement en direct", "🔐 Panneau des juges/admin", "📢 Avis mondial"],
+        "desc": "Ce tournoi est conforme aux règlements de l'ISMF. Les scores et les pénalités sont agrégés en temps réel via l'application web de terrain.",
+        "video": "📺 Vidéo des règlements du Skimo", "intro_video": "⛷️ Qu'est-ce que le Skimo?", "photo": "📸 Galerie d'action olympique", "pay": "💳 S'inscrire et paiement sécurisé",
+        "news_title": "📰 News & Stories (Dernières nouvelles mondiales)", "search_holder": "🔍 Rechercher des informations...", "notice": "📢 Avis", "auth": "👤 Connexion/S'inscrire",
+        "ai_btn": "🤖 Voir le résumé de l'AI", "ai_modal_title": "⚡ Briefing en temps réel de l'IA générative"
+    },
+    "IT": {
+        "title": "SKIMO KOREA", "subtitle": "Portale informativo sullo sci alpinismo",
+        "menu": ["Home", "Iscrizione Atleti", "Classifica in Tempo Reale", "🔐 Pannello Giudici/Admin", "📢 Avviso Globale"],
+        "desc": "Questo torneo è conforme ai regolamenti ISMF. I punteggi e le penalità vengono aggregati in tempo reale tramite l'app web sul campo.",
+        "video": "📺 Video delle regole dello Skimo", "intro_video": "⛷️ Cos'è lo Skimo?", "photo": "📸 Galleria d'azione olimpica", "pay": "💳 Registrati e pagamento sicuro",
+        "news_title": "📰 News & Stories (Ultime notizie globali)", "search_holder": "🔍 Cerca informazioni...", "notice": "📢 Avviso", "auth": "👤 Accedi/Registrati",
+        "ai_btn": "🤖 Visualizza il riepilogo dell'IA", "ai_modal_title": "⚡ Briefing in tempo reale dell'IA generativa"
+    },
+    "ZH": {
+        "title": "SKIMO KOREA", "subtitle": "滑雪登山信息门户网站",
+        "menu": ["赛事首页", "运动员报名", "实时排行榜 (LIVE)", "🔐 裁判/管理员控制台", "📢 全球公告"],
+        "desc": "本次赛事遵守国际滑雪登山联盟 (ISMF) 的规定。得分和处罚通过实地网页应用程序在全球范围内实时汇总。",
+        "video": "📺 滑雪登山规则视频", "intro_video": "⛷️ 什么是滑雪登山？", "photo": "📸 奥运现场画廊", "pay": "💳 立即报名与安全支付",
+        "news_title": "📰 News & Stories (全球最新动态)", "search_holder": "🔍 输入搜索内容...", "notice": "📢 公告", "auth": "👤 登录/注册",
+        "ai_btn": "🤖 查看 AI 摘要", "ai_modal_title": "⚡ 生成式 AI 实时简报"
+    },
+    "JA": {
+        "title": "SKIMO KOREA", "subtitle": "山岳スキー情報ポータル",
+        "menu": ["大会ホーム", "選手参加申込", "リアルタイムリーダーボード", "🔐 審判/管理者パネル", "📢 グローバルお知らせ"],
+        "desc": "本大会は国際山岳スキー連盟（ISMF）の規定に準拠しています。スコアやペナルティは、フィールドのウェブアプリを通じてリアルタイムで集計されます。",
+        "video": "📺 山岳スキー規則動画", "intro_video": "⛷️ 山岳スキーとは？", "photo": "📸 オリンピックギャラリー", "pay": "💳 参加申込と安全な決済",
+        "news_title": "📰 News & Stories (最新のグローバルニュース)", "search_holder": "🔍 情報を検索...", "notice": "📢 お知らせ", "auth": "👤 ログイン/会員登録",
+        "ai_btn": "🤖 AI要約を見る", "ai_modal_title": "⚡ 生成AIリアルタイムブリーフィング"
     }
 }
 
-# 다국어 기본 안전장치
+# 다국어 기본 안전장치 (안전장치를 .get() 메소드로 한 번 더 강화)
 if "current_lang_code" not in st.session_state:
     st.session_state.current_lang_code = "KO"
 if st.session_state.current_lang_code not in LOCALIZED_TEXT:
     st.session_state.current_lang_code = "KO"
 
-T = LOCALIZED_TEXT[st.session_state.current_lang_code]
+# 딕셔너리에 매핑이 존재하지 않는 극단적 상황 시 English("EN")를 기본값으로 대체하는 안전장치
+T = LOCALIZED_TEXT.get(st.session_state.current_lang_code, LOCALIZED_TEXT["EN"])
 
 # ------------------------------------------
 # [🚨 고도화: 영구 저장 방식의 로그인/회원가입 모달]
@@ -220,7 +250,6 @@ def auth_dialog():
         login_id = st.text_input("아이디", key="login_id").strip()
         login_pw = st.text_input("비밀번호", type="password", key="login_pw").strip()
         if st.button("로그인 완료", use_container_width=True):
-            # 파일에서 실시간으로 다시 읽어와 검증
             current_db = load_user_db()
             if login_id in current_db and current_db[login_id]["pw"] == login_pw:
                 st.session_state.logged_in_user = login_id
@@ -244,10 +273,9 @@ def auth_dialog():
             elif reg_pw != reg_pw_confirm:
                 st.error("❌ 비밀번호 확인이 일치하지 않습니다.")
             else:
-                # 새로운 유저 정보를 로컬 파일 데이터베이스에 저장
                 current_db[reg_id] = {"pw": reg_pw, "role": "USER"}
                 save_user_db(current_db)
-                st.session_state.user_db = current_db  # 상태 동기화
+                st.session_state.user_db = current_db  
                 st.success("🚀 회원가입 성공! 이제 로그인 탭에서 로그인해 주세요.")
 
 # 생성형 AI 기반 뉴스 요약 모달 창 정의
@@ -301,11 +329,17 @@ with c_menu:
 with c_right:
     sub_lang, sub_buttons = st.columns([4, 6])
     with sub_lang:
-        selected_lang_name = st.selectbox("Language", list(LANG_DICT.keys()), index=0, label_visibility="collapsed")
+        # 언어 딕셔너리의 키를 기반으로 현재 선택된 언어 인덱스 동적 동기화
+        lang_keys = list(LANG_DICT.keys())
+        current_lang_name = [k for k, v in LANG_DICT.items() if v == st.session_state.current_lang_code]
+        default_lang_idx = lang_keys.index(current_lang_name[0]) if current_lang_name else 0
+        
+        selected_lang_name = st.selectbox("Language", lang_keys, index=default_lang_idx, label_visibility="collapsed")
         new_lang_code = LANG_DICT[selected_lang_name]
         if st.session_state.current_lang_code != new_lang_code:
             st.session_state.current_lang_code = new_lang_code
             st.rerun()
+            
     with sub_buttons:
         if st.session_state.logged_in_user is None:
             if st.button(T["auth"]): auth_dialog()
@@ -398,7 +432,6 @@ elif st.session_state.menu_idx == 3:
     if st.session_state.logged_in_user is None:
         st.warning("⚠️ 권한 경고: 심판 계정으로 로그인이 필요합니다.")
     else:
-        # 현재 로그인된 유저의 권한 파악
         current_db = load_user_db()
         user_role = current_db.get(st.session_state.logged_in_user, {}).get("role", "USER")
         
