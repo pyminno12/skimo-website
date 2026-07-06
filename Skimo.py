@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import time
+import json
 
 # ==========================================
 # 1. 페이지 설정 및 글로벌 상태 정의
@@ -23,15 +24,31 @@ if "logged_in_user" not in st.session_state:
     st.session_state.logged_in_user = None
 
 # ------------------------------------------
-# [메모리 백엔드 도메인 데이터셋 세팅]
+# [🚨 중요: 브라우저 쿠키/로컬 스토리지 대용 구조 구현]
 # ------------------------------------------
+# Streamlit의 실험적 기능인 컴포넌트나 파일 영구 저장을 사용해 새로고침을 견디도록 설계합니다.
+# 배포 환경에서도 데이터가 유지될 수 있도록 서버 로컬 json 파일을 영구 데이터베이스 허브로 활용합니다.
+DB_FILE = "user_database.json"
 
-# A. 심판 인증 시스템 데이터
-if "user_db" not in st.session_state:
-    st.session_state.user_db = {
-        "admin": {"pw": "1234", "role": "ADMIN"},
-        "skimo": {"pw": "skimo123", "role": "JUDGE"}
-    }
+def load_user_db():
+    try:
+        with open(DB_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        # 최초 기본 계정 구조 정의
+        initial_db = {
+            "admin": {"pw": "1234", "role": "ADMIN"},
+            "skimo": {"pw": "skimo123", "role": "JUDGE"}
+        }
+        save_user_db(initial_db)
+        return initial_db
+
+def save_user_db(db_data):
+    with open(DB_FILE, "w", encoding="utf-8") as f:
+        json.dump(db_data, f, ensure_ascii=False, indent=4)
+
+# 실시간 유저 DB 로드 및 세션 동기화
+st.session_state.user_db = load_user_db()
 
 # B. 실시간 계측/타이밍 데이터 (Telemetry 데이터 모델)
 if "athletes_domain" not in st.session_state:
@@ -57,7 +74,7 @@ if "notice_domain" not in st.session_state:
         }
     ]
 
-# D. 글로벌 실시간 다국어 뉴스 및 AI 요약 아카이브 (AI Summarizer 통합형 도메인)
+# D. 글로벌 실시간 다국어 뉴스 및 AI 요약 아카이브
 if "home_news_domain" not in st.session_state:
     st.session_state.home_news_domain = [
         {
@@ -104,7 +121,7 @@ if "home_news_domain" not in st.session_state:
                 "FR": "🏅 L'équipe nationale de Skimo part pour un entraînement hors saison en Nouvelle-Zélande",
                 "IT": "🏅 La squadra nazionale di Skimo parte per l'allenamento fuori stagione in Nuova Zelanda",
                 "ZH": "🏅 韩国滑雪登山国家队启程前往新西兰展开新赛季海外集训",
-                "JA": "🏅 山岳スキー大韓民国国家代表チーム、ニュージーランド海外遠征トレーニングのため出국의 투へ"
+                "JA": "🏅 山岳スキー大韓民국国家대표팀, 뉴질랜드 해외원정 트레이닝을 위해 출국의 투へ"
             },
             "ai_summary": {
                 "KO": "🤖 **AI 요약:** 대한민국 산악스키 국가대표 선수단이 설질 조건이 우수한 뉴질랜드 남섬 인터내셔널 스키 필드로 비시즌 전지훈련을 떠납니다. 해발 고도 2,000m 이상에서의 산소 적응 훈련에 집중합니다.\n\n💡 **핵심 키워드:** `#국가대표팀` `#뉴질랜드전지훈련` `#고산적응`",
@@ -141,16 +158,14 @@ st.markdown(f"""
         backdrop-filter: blur(10px); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff;
     }}
     
-    /* 네비게이션용 투명 버튼 스타일 유지 */
     div.stButton > button {{
         background: transparent !important; color: white !important; border: none !important;
         font-size: 14px !important; font-weight: 500 !important;
     }}
     div.stButton > button:hover {{ color: #00c6ff !important; }}
     
-    /* 뉴스 리스트 전용 텍스트 스타일 수정 */
     .news-flex-container {{ display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 5px 0; }}
-    .news-title-link {{ font-size: 15px; font-weight: 500; color: #e2e8f0; text-decoration: none; transition: color 0.2s; }}
+    .news-title-link {{ font-size: 15px; font-weight: 500; color: #e2e8f0; text-decoration: none; }}
     .news-title-link:hover {{ color: #00c6ff; cursor: pointer; }}
     .news-date-span {{ font-size: 13px; color: #cbd5e1; white-space: nowrap; }}
     
@@ -186,7 +201,7 @@ LOCALIZED_TEXT = {
     }
 }
 
-# 다국어 기본 안전장치 (Fallback 매핑)
+# 다국어 기본 안전장치
 if "current_lang_code" not in st.session_state:
     st.session_state.current_lang_code = "KO"
 if st.session_state.current_lang_code not in LOCALIZED_TEXT:
@@ -194,40 +209,58 @@ if st.session_state.current_lang_code not in LOCALIZED_TEXT:
 
 T = LOCALIZED_TEXT[st.session_state.current_lang_code]
 
-# 계정 인증 팝업 모달 다이얼로그
+# ------------------------------------------
+# [🚨 고도화: 영구 저장 방식의 로그인/회원가입 모달]
+# ------------------------------------------
 @st.dialog("🔐 SKIMO KOREA 계정 관리")
 def auth_dialog():
     tab1, tab2 = st.tabs(["👤 로그인", "📝 회원가입"])
+    
     with tab1:
-        login_id = st.text_input("아이디", key="login_id")
-        login_pw = st.text_input("비밀번호", type="password", key="login_pw")
+        login_id = st.text_input("아이디", key="login_id").strip()
+        login_pw = st.text_input("비밀번호", type="password", key="login_pw").strip()
         if st.button("로그인 완료", use_container_width=True):
-            if login_id in st.session_state.user_db and st.session_state.user_db[login_id]["pw"] == login_pw:
+            # 파일에서 실시간으로 다시 읽어와 검증
+            current_db = load_user_db()
+            if login_id in current_db and current_db[login_id]["pw"] == login_pw:
                 st.session_state.logged_in_user = login_id
-                st.success("로그인 성공!")
+                st.success(f"🎉 반갑습니다, {login_id}님! 로그인 성공.")
                 time.sleep(0.5)
                 st.rerun()
             else:
-                st.error("오류: 계정 정보를 확인하세요.")
+                st.error("❌ 아이디 또는 비밀번호가 일치하지 않습니다.")
+                
+    with tab2:
+        reg_id = st.text_input("새로운 아이디 생성", key="reg_id").strip()
+        reg_pw = st.text_input("새로운 비밀번호 설정", type="password", key="reg_pw").strip()
+        reg_pw_confirm = st.text_input("비밀번호 확인", type="password", key="reg_pw_confirm").strip()
+        
+        if st.button("회원가입 신청", use_container_width=True):
+            current_db = load_user_db()
+            if not reg_id or not reg_pw:
+                st.warning("⚠️ 아이디와 비밀번호를 모두 입력해주세요.")
+            elif reg_id in current_db:
+                st.error("❌ 이미 존재하는 아이디입니다. 다른 아이디를 사용해주세요.")
+            elif reg_pw != reg_pw_confirm:
+                st.error("❌ 비밀번호 확인이 일치하지 않습니다.")
+            else:
+                # 새로운 유저 정보를 로컬 파일 데이터베이스에 저장
+                current_db[reg_id] = {"pw": reg_pw, "role": "USER"}
+                save_user_db(current_db)
+                st.session_state.user_db = current_db  # 상태 동기화
+                st.success("🚀 회원가입 성공! 이제 로그인 탭에서 로그인해 주세요.")
 
-# [새로 추가된 기능] 생성형 AI 기반 뉴스 요약 모달 창 정의
+# 생성형 AI 기반 뉴스 요약 모달 창 정의
 @st.dialog("🎯 AI 요약 브리핑")
 def ai_summary_dialog(news_item, lang_code):
     st.markdown(f"### {T['ai_modal_title']}")
     st.write("---")
-    
-    # 선택한 언어의 뉴스 제목 표시
     current_title = news_item["title"].get(lang_code, news_item["title"]["EN"])
     st.markdown(f"**📌 대상 뉴스:** {current_title}")
-    
-    # 생성형 AI 스트리밍 구동 효과 연출
     with st.spinner("LLM 인퍼런스 엔진 가동 중..."):
         time.sleep(0.7)
-    
-    # 언어에 맞는 AI 요약 바인딩 (영어 외 국가는 기본 영어 서머리 제공 정책)
     summary_content = news_item["ai_summary"].get(lang_code, news_item["ai_summary"]["EN"])
     st.markdown(summary_content)
-    
     st.write("---")
     st.link_button("🔗 원문 뉴스 링크 열기 (ISMF)", news_item["link"], use_container_width=True)
 
@@ -239,7 +272,6 @@ st.markdown('<div class="centered-wrapper">', unsafe_allow_html=True)
 
 c_menu, c_search, c_right = st.columns([3, 4, 5])
 
-# 인덱스 이동 키워드 테이블
 SEARCH_KEYWORDS = {
     0: ["홈", "대회", "소개", "뉴스", "home", "news"],
     1: ["선수", "참가", "신청", "등록", "접수"],
@@ -326,20 +358,13 @@ if st.session_state.menu_idx == 0:
             github_url = f"https://raw.githubusercontent.com/pyminno12/skimo-website/main/{encoded_filename}"
             st.image(github_url, caption=selected_photo["caption"], use_container_width=True)
 
-    # -------------------------------------------------------------------------
-    # 고도화된 AI News Summarizer 섹션 구현체
-    # -------------------------------------------------------------------------
     st.markdown("<hr style='border-color: rgba(255,255,255,0.15);'>", unsafe_allow_html=True)
     st.markdown(f"## {T['news_title']}")
     
     lang_code = st.session_state.current_lang_code
-    
     for item in st.session_state.home_news_domain:
         localized_news_title = item["title"].get(lang_code, item["title"]["EN"])
-        
-        # 가로 정렬을 위해 스트리먼 컬럼 배치 구조 사용
         c_news_title, c_news_btn = st.columns([8, 2])
-        
         with c_news_title:
             st.markdown(f"""
                 <div class="news-flex-container">
@@ -347,9 +372,7 @@ if st.session_state.menu_idx == 0:
                     <span class="news-date-span">📅 {item['date']}</span>
                 </div>
             """, unsafe_allow_html=True)
-            
         with c_news_btn:
-            # 뉴스별로 고유한 버튼 생성 후 클릭 시 AI 요약 다이얼로그 호출
             if st.button(T["ai_btn"], key=f"btn_ai_{item['id']}", use_container_width=True):
                 ai_summary_dialog(item, lang_code)
 
@@ -375,14 +398,21 @@ elif st.session_state.menu_idx == 3:
     if st.session_state.logged_in_user is None:
         st.warning("⚠️ 권한 경고: 심판 계정으로 로그인이 필요합니다.")
     else:
-        bib_list = list(st.session_state.athletes_domain.keys())
-        selected_bib = st.selectbox("업데이트할 BIB 선택", bib_list)
-        new_status = st.selectbox("상태 값 변경", ["RACING", "FINISHED", "DNF", "DSQ"])
-        if st.button("🚨 데이터 필드 실시간 동기화"):
-            st.session_state.athletes_domain[selected_bib]["Status"] = new_status
-            st.success(f"배번호 {selected_bib}번 선수의 경기 상태가 {new_status}로 변경 및 동기화되었습니다.")
-            time.sleep(0.5)
-            st.rerun()
+        # 현재 로그인된 유저의 권한 파악
+        current_db = load_user_db()
+        user_role = current_db.get(st.session_state.logged_in_user, {}).get("role", "USER")
+        
+        if user_role not in ["ADMIN", "JUDGE"]:
+            st.error("🚫 접근 거부: 귀하는 일반 사용자로, 심판/관리자 패널을 조작할 권한이 없습니다.")
+        else:
+            bib_list = list(st.session_state.athletes_domain.keys())
+            selected_bib = st.selectbox("업데이트할 BIB 선택", bib_list)
+            new_status = st.selectbox("상태 값 변경", ["RACING", "FINISHED", "DNF", "DSQ"])
+            if st.button("🚨 데이터 필드 실시간 동기화"):
+                st.session_state.athletes_domain[selected_bib]["Status"] = new_status
+                st.success(f"배번호 {selected_bib}번 선수의 경기 상태가 {new_status}로 변경 및 동기화되었습니다.")
+                time.sleep(0.5)
+                st.rerun()
 
 elif st.session_state.menu_idx == 4:
     st.markdown(f"## {T['menu'][4]}")
