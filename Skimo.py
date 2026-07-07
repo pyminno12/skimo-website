@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px  # 시각화 기능 추가
 from datetime import datetime
 import time
 import json
@@ -23,9 +24,7 @@ if "menu_idx" not in st.session_state:
 if "logged_in_user" not in st.session_state:
     st.session_state.logged_in_user = None
 
-# ------------------------------------------
-# [🚨 중요: 브라우저 쿠키/로컬 스토리지 대용 구조 구현]
-# ------------------------------------------
+# [브라우저 쿠키/로컬 스토리지 대용 구조]
 DB_FILE = "user_database.json"
 
 def load_user_db():
@@ -44,18 +43,19 @@ def save_user_db(db_data):
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(db_data, f, ensure_ascii=False, indent=4)
 
-# 실시간 유저 DB 로드 및 세션 동기화
 st.session_state.user_db = load_user_db()
 
-# B. 실시간 계측/타이밍 데이터 (Telemetry 데이터 모델)
+# 실시간 계측/타이밍 데이터 (Telemetry 데이터 모델)
 if "athletes_domain" not in st.session_state:
     st.session_state.athletes_domain = {
         "101": {"Name": "김민우", "Team": "KOREA", "Category": "Sprint", "Status": "RACING", "CP1": "10:15:20", "CP2": "--:--:--", "Penalty_Sec": 0, "Final_Record": "--:--:--"},
         "102": {"Name": "Alex Smith", "Team": "USA", "Category": "Individual", "Status": "RACING", "CP1": "10:14:05", "CP2": "10:45:12", "Penalty_Sec": 0, "Final_Record": "--:--:--"},
-        "103": {"Name": "Chloe", "Team": "FRANCE", "Category": "Vertical", "Status": "RACING", "CP1": "10:16:55", "CP2": "10:49:30", "Penalty_Sec": 10, "Final_Record": "--:--:--"},
+        "103": {"Name": "Chloe", "Team": "FRANCE", "Category": "Vertical", "Status": "FINISHED", "CP1": "10:16:55", "CP2": "10:49:30", "Penalty_Sec": 10, "Final_Record": "11:05:14"},
+        "104": {"Name": "Takahashi", "Team": "JAPAN", "Category": "Sprint", "Status": "RACING", "CP1": "10:20:11", "CP2": "--:--:--", "Penalty_Sec": 0, "Final_Record": "--:--:--"},
+        "105": {"Name": "Li Wei", "Team": "CHINA", "Category": "Individual", "Status": "DNF", "CP1": "10:11:00", "CP2": "--:--:--", "Penalty_Sec": 0, "Final_Record": "--:--:--"},
     }
 
-# C. 다국어 공지사항 아카이브 데이터
+# 다국어 공지사항 아카이브 데이터
 if "notice_domain" not in st.session_state:
     st.session_state.notice_domain = [
         {
@@ -71,13 +71,11 @@ if "notice_domain" not in st.session_state:
         }
     ]
 
-# D. 글로벌 실시간 다국어 뉴스 및 AI 요약 아카이브
+# 글로벌 실시간 다국어 뉴스 및 AI 요약 아카이브
 if "home_news_domain" not in st.session_state:
     st.session_state.home_news_domain = [
         {
-            "id": "news_01",
-            "date": "2026-06-18",
-            "link": "https://www.ismf-ski.org/",
+            "id": "news_01", "date": "2026-06-18", "link": "https://www.ismf-ski.org/",
             "title": {
                 "KO": "🚀 2030 프랑스 알프스 동계 올림픽, 산악스키 세부 종목 규정 발표 예정",
                 "EN": "🚀 2030 French Alps Winter Olympics: Detailed Skimo Regulations to be Announced",
@@ -87,42 +85,8 @@ if "home_news_domain" not in st.session_state:
                 "JA": "🚀 2030年フランス・アルプス冬季オリンピック、山岳スキー詳細種目規定がまもなく発表予定"
             },
             "ai_summary": {
-                "KO": "🤖 **AI 요약:** 2030 프랑스 동계 올림픽 조직위 and ISMF가 산악스키 정식 종목 채택에 따른 세부 중계 및 페널티 규정을 내달 확정합니다. 이번 규정은 가파른 업힐 전환 구간의 공정성 확보에 초점을 맞추고 있습니다.\n\n💡 **핵심 키워드:** `#2030동계올림픽` `#ISMF규정` `#산악스키정식종목`",
-                "EN": "🤖 **AI Summary:** The 2030 French Winter Olympics Committee and ISMF will finalize detailed broadcasting and penalty regulations next month. This update focuses heavily on ensuring fairness during steep uphill transition zones.\n\n💡 **Keywords:** `#WinterOlympics2030` `#ISMF_Rules` `#SkimoOfficial`"
-            }
-        },
-        {
-            "id": "news_02",
-            "date": "2026-06-12",
-            "link": "https://www.ismf-ski.org/",
-            "title": {
-                "KO": "❄️ 아시아 산악스키 연맹, 청소년 선수 육성을 위한 동계 캠프 평창 개최 확정",
-                "EN": "❄️ Asian Skimo Federation Confirms Winter Youth Development Camp in Pyeongchang",
-                "FR": "❄️ La Fédération Asiatique de Skimo confirme un camp de développement pour les jeunes à Pyeongchang",
-                "IT": "❄️ La Federazione Asiatica Skimo conferma il campo di sviluppo giovanile invernale a Pyeongchang",
-                "ZH": "❄️ 亚洲滑雪登山联盟确认将在平昌举办冬季青少年选手培育训练营",
-                "JA": "❄️ アジア山岳スキー連盟、青少年選手育成のための冬季キャンプを平昌で開催確定"
-            },
-            "ai_summary": {
-                "KO": "🤖 **AI 요약:** 아시아 청소년 산악스키 유망주들을 위한 집중 트레이닝 캠프가 대한민국 평창 알펜시아에서 개최됩니다. 국제 기술 위원들이 직접 패트롤 및 장비 전환 기술을 지도할 예정입니다.\n\n💡 **핵심 키워드:** `#평창동계캠프` `#청소년육성` `#아시아산악스키`",
-                "EN": "🤖 **AI Summary:** An intensive training camp for promising Asian youth Skimo athletes will be held in Pyeongchang Alpensia, South Korea. International technical delegates will directly mentor patrol and gear transition techniques.\n\n💡 **Keywords:** `#PyeongchangCamp` `#YouthDevelopment` `#AsianSkimo`"
-            }
-        },
-        {
-            "id": "news_03",
-            "date": "2026-06-05",
-            "link": "https://www.ismf-ski.org/",
-            "title": {
-                "KO": "🏅 대한민국 산악스키 국가대표팀, 뉴질랜드 전지훈련 위해 출국",
-                "EN": "🏅 National Skimo Team Departs for Off-Season Training in New Zealand",
-                "FR": "🏅 L'équipe nationale de Skimo part pour un entraînement hors saison en Nouvelle-Zélande",
-                "IT": "🏅 La squadra nazionale di Skimo parte per l'allenamento fuori stagione in Nuova Zelanda",
-                "ZH": "🏅 韩国滑雪登山国家队启程前往新西兰展开新赛季海外集训",
-                "JA": "🏅 山岳スキー大韓民国国家代表チーム、ニュージーランド海外遠征トレーニングのために出国"
-            },
-            "ai_summary": {
-                "KO": "🤖 **AI 요약:** 대한민국 산악스키 국가대표 선수단이 설질 조건이 우수한 뉴질랜드 남섬 인터내셔널 스키 필드로 비시즌 전지훈련을 떠납니다. 해발 고도 2,000m 이상에서의 산소 적응 훈련에 집중합니다.\n\n💡 **핵심 키워드:** `#국가대표팀` `#뉴질랜드전지훈련` `#고산적응`",
-                "EN": "🤖 **AI Summary:** The South Korean National Skimo Team departs for off-season training at the International Ski Field in the South Island of New Zealand, focusing on high-altitude oxygen adaptation over 2,000m.\n\n💡 **Keywords:** `#NationalTeam` `#NewZealandTraining` `#AltitudeAdaptation`"
+                "KO": "🤖 **AI 요약:** 2030 프랑스 동계 올림픽 조직위 and ISMF가 산악스키 정식 종목 채택에 따른 세부 중계 및 페널티 규정을 내달 확정합니다.\n\n💡 **핵심 키워드:** `#2030동계올림픽` `#ISMF규정`",
+                "EN": "🤖 **AI Summary:** The 2030 French Winter Olympics Committee and ISMF will finalize detailed regulations next month.\n\n💡 **Keywords:** `#WinterOlympics2030` `#ISMF_Rules`"
             }
         }
     ]
@@ -168,11 +132,19 @@ st.markdown(f"""
     
     .notice-card {{ background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 20px; margin-bottom: 15px; }}
     .notice-badge {{ background-color: #00c6ff; color: #111; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 10px; }}
+    
+    /* 실시간 분석 대시보드 박스 내부 스타일링 */
+    div[data-testid="stMetric"] {{
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 10px;
+        border-radius: 8px;
+    }}
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. 6개국 로컬라이제이션 매핑 아키텍처 (보완 완료)
+# 2. 6개국 로컬라이제이션 매핑 아키텍처
 # ==========================================
 LANG_DICT = {
     "한국어 (KO)": "KO", "English (EN)": "EN", "Français (FR)": "FR",       
@@ -186,7 +158,9 @@ LOCALIZED_TEXT = {
         "desc": "본 대회는 국제산악스키연맹(ISMF) 규정을 준수하며, field 심판 시스템과 동기화되어 실시간 기록을 전 세계에 생중계합니다.",
         "video": "📺 경기 종목 안내", "intro_video": "⛷️ 산악스키 소개", "photo": "📸 올림픽 현장 갤러리", "pay": "💳 참가 신청 및 안전 결제",
         "news_title": "📰 News & Stories (글로벌 최신 소식)", "search_holder": "🔍 검색어를 입력하세요...", "notice": "📢 공지사항", "auth": "👤 로그인/회원가입",
-        "ai_btn": "🤖 AI 요약보기", "ai_modal_title": "⚡ Generative AI 실시간 요약 브리핑"
+        "ai_btn": "🤖 AI 요약보기", "ai_modal_title": "⚡ Generative AI 실시간 요약 브리핑",
+        "stats_title": "📊 실시간 경기 텔레메트리 분석 (Telemetry Analytics)", "total_athletes": "총 참가 선수", "racing_athletes": "현재 레이싱 중", "finished_athletes": "완주 성공",
+        "chart_country": "국가별 선수 분포", "chart_category": "세부 종목별 참가 비중", "toast_update": "📢 [실시간 동기화] 배번호 {bib}번 선수의 상태가 {status}로 업데이트되었습니다!"
     },
     "EN": {
         "title": "SKIMO KOREA", "subtitle": "Ski Mountaineering Information Portal",
@@ -194,7 +168,9 @@ LOCALIZED_TEXT = {
         "desc": "This tournament complies with ISMF regulations. Scoring and penalties are aggregated in real-time globally via the field web app.",
         "video": "📺 Skimo Rules Video", "intro_video": "⛷️ What is Skimo?", "photo": "📸 Olympic Action Gallery", "pay": "💳 Register & Secure Pay",
         "news_title": "📰 News & Stories (Global Latest News)", "search_holder": "🔍 Search information...", "notice": "📢 Notice", "auth": "👤 Login/Register",
-        "ai_btn": "🤖 View AI Summary", "ai_modal_title": "⚡ Generative AI Real-time Briefing"
+        "ai_btn": "🤖 View AI Summary", "ai_modal_title": "⚡ Generative AI Real-time Briefing",
+        "stats_title": "📊 Live Telemetry Analytics", "total_athletes": "Total Athletes", "racing_athletes": "Racing Now", "finished_athletes": "Finished",
+        "chart_country": "Athletes by Country", "chart_category": "Participation by Category", "toast_update": "📢 [Live Sync] Athlete #{bib} status updated to {status}!"
     },
     "FR": {
         "title": "SKIMO KOREA", "subtitle": "Portail d'information sur le ski-alpinisme",
@@ -202,7 +178,9 @@ LOCALIZED_TEXT = {
         "desc": "Ce tournoi est conforme aux règlements de l'ISMF. Les scores et les pénalités sont agrégés en temps réel via l'application web de terrain.",
         "video": "📺 Vidéo des règlements du Skimo", "intro_video": "⛷️ Qu'est-ce que le Skimo?", "photo": "📸 Galerie d'action olympique", "pay": "💳 S'inscrire et paiement sécurisé",
         "news_title": "📰 News & Stories (Dernières nouvelles mondiales)", "search_holder": "🔍 Rechercher des informations...", "notice": "📢 Avis", "auth": "👤 Connexion/S'inscrire",
-        "ai_btn": "🤖 Voir le résumé de l'AI", "ai_modal_title": "⚡ Briefing en temps réel de l'IA générative"
+        "ai_btn": "🤖 Voir le résumé de l'AI", "ai_modal_title": "⚡ Briefing en temps réel de l'IA générative",
+        "stats_title": "📊 Analyse télémétrique en direct", "total_athletes": "Total des athlètes", "racing_athletes": "En course", "finished_athletes": "Terminé",
+        "chart_country": "Athlètes par pays", "chart_category": "Participation par catégorie", "toast_update": "📢 [Sync en direct] Le statut de l'athlète #{bib} a été mis à jour en {status}!"
     },
     "IT": {
         "title": "SKIMO KOREA", "subtitle": "Portale informativo sullo sci alpinismo",
@@ -210,7 +188,9 @@ LOCALIZED_TEXT = {
         "desc": "Questo torneo è conforme ai regolamenti ISMF. I punteggi e le penalità vengono aggregati in tempo reale tramite l'app web sul campo.",
         "video": "📺 Video delle regole dello Skimo", "intro_video": "⛷️ Cos'è lo Skimo?", "photo": "📸 Galleria d'azione olimpica", "pay": "💳 Registrati e pagamento sicuro",
         "news_title": "📰 News & Stories (Ultime notizie globali)", "search_holder": "🔍 Cerca informazioni...", "notice": "📢 Avviso", "auth": "👤 Accedi/Registrati",
-        "ai_btn": "🤖 Visualizza il riepilogo dell'IA", "ai_modal_title": "⚡ Briefing in tempo reale dell'IA generativa"
+        "ai_btn": "🤖 Visualizza il riepilogo dell'IA", "ai_modal_title": "⚡ Briefing in tempo reale dell'IA generativa",
+        "stats_title": "📊 Analisi telemetrica in tempo reale", "total_athletes": "Atleti totali", "racing_athletes": "In gara ora", "finished_athletes": "Finito",
+        "chart_country": "Atleti per paese", "chart_category": "Partecipazione per categoria", "toast_update": "📢 [Sincronizzazione live] Lo stato dell'atleta #{bib} è stato aggiornato a {status}!"
     },
     "ZH": {
         "title": "SKIMO KOREA", "subtitle": "滑雪登山信息门户网站",
@@ -218,7 +198,9 @@ LOCALIZED_TEXT = {
         "desc": "本次赛事遵守国际滑雪登山联盟 (ISMF) 的规定。得分和处罚通过实地网页应用程序在全球范围内实时汇总。",
         "video": "📺 滑雪登山规则视频", "intro_video": "⛷️ 什么是滑雪登山？", "photo": "📸 奥运现场画廊", "pay": "💳 立即报名与安全支付",
         "news_title": "📰 News & Stories (全球最新动态)", "search_holder": "🔍 输入搜索内容...", "notice": "📢 公告", "auth": "👤 登录/注册",
-        "ai_btn": "🤖 查看 AI 摘要", "ai_modal_title": "⚡ 生成式 AI 实时简报"
+        "ai_btn": "🤖 查看 AI 摘要", "ai_modal_title": "⚡ 生成式 AI 实时简报",
+        "stats_title": "📊 实时比赛遥测数据分析 (Telemetry Analytics)", "total_athletes": "总参赛人数", "racing_athletes": "正在比赛中", "finished_athletes": "成功完赛",
+        "chart_country": "各国选手分布", "chart_category": "各项目报名比例", "toast_update": "📢 [实时同步] 号码牌 {bib} 选手状态已更新为 {status}!"
     },
     "JA": {
         "title": "SKIMO KOREA", "subtitle": "山岳スキー情報ポータル",
@@ -226,26 +208,21 @@ LOCALIZED_TEXT = {
         "desc": "本大会は国際山岳スキー連盟（ISMF）の規定に準拠しています。スコアやペナルティは、フィールドのウェブアプリを通じてリアルタイムで集計されます。",
         "video": "📺 山岳スキー規則動画", "intro_video": "⛷️ 山岳スキーとは？", "photo": "📸 オリンピックギャラリー", "pay": "💳 参加申込と安全な決済",
         "news_title": "📰 News & Stories (最新のグローバルニュース)", "search_holder": "🔍 情報を検索...", "notice": "📢 お知らせ", "auth": "👤 ログイン/会員登録",
-        "ai_btn": "🤖 AI要約を見る", "ai_modal_title": "⚡ 生成AIリアルタイムブリーフィング"
+        "ai_btn": "🤖 AI요약を見る", "ai_modal_title": "⚡ 生成AIリアルタイムブリーフィング",
+        "stats_title": "📊 リアルタイム競技テレメトリ分析 (Telemetry Analytics)", "total_athletes": "総参加選手数", "racing_athletes": "現在レース中", "finished_athletes": "完走者数",
+        "chart_country": "国別選手分布", "chart_category": "種目別参加比率", "toast_update": "📢 [ライブ同期] ゼッケン {bib} 番の選手ステータスが {status} に更新されました！"
     }
 }
 
-# 다국어 기본 안전장치 (안전장치를 .get() 메소드로 한 번 더 강화)
 if "current_lang_code" not in st.session_state:
     st.session_state.current_lang_code = "KO"
-if st.session_state.current_lang_code not in LOCALIZED_TEXT:
-    st.session_state.current_lang_code = "KO"
 
-# 딕셔너리에 매핑이 존재하지 않는 극단적 상황 시 English("EN")를 기본값으로 대체하는 안전장치
 T = LOCALIZED_TEXT.get(st.session_state.current_lang_code, LOCALIZED_TEXT["EN"])
 
-# ------------------------------------------
-# [🚨 고도화: 영구 저장 방식의 로그인/회원가입 모달]
-# ------------------------------------------
+# 로그인/회원가입 모달
 @st.dialog("🔐 SKIMO KOREA 계정 관리")
 def auth_dialog():
     tab1, tab2 = st.tabs(["👤 로그인", "📝 회원가입"])
-    
     with tab1:
         login_id = st.text_input("아이디", key="login_id").strip()
         login_pw = st.text_input("비밀번호", type="password", key="login_pw").strip()
@@ -258,12 +235,10 @@ def auth_dialog():
                 st.rerun()
             else:
                 st.error("❌ 아이디 또는 비밀번호가 일치하지 않습니다.")
-                
     with tab2:
         reg_id = st.text_input("새로운 아이디 생성", key="reg_id").strip()
         reg_pw = st.text_input("새로운 비밀번호 설정", type="password", key="reg_pw").strip()
         reg_pw_confirm = st.text_input("비밀번호 확인", type="password", key="reg_pw_confirm").strip()
-        
         if st.button("회원가입 신청", use_container_width=True):
             current_db = load_user_db()
             if not reg_id or not reg_pw:
@@ -278,7 +253,7 @@ def auth_dialog():
                 st.session_state.user_db = current_db  
                 st.success("🚀 회원가입 성공! 이제 로그인 탭에서 로그인해 주세요.")
 
-# 생성형 AI 기반 뉴스 요약 모달 창 정의
+# AI 뉴스 요약 모달 창
 @st.dialog("🎯 AI 요약 브리핑")
 def ai_summary_dialog(news_item, lang_code):
     st.markdown(f"### {T['ai_modal_title']}")
@@ -303,7 +278,7 @@ c_menu, c_search, c_right = st.columns([3, 4, 5])
 SEARCH_KEYWORDS = {
     0: ["홈", "대회", "소개", "뉴스", "home", "news"],
     1: ["선수", "참가", "신청", "등록", "접수"],
-    2: ["실시간", "리더", "라이브", "순위", "live"],
+    2: ["실시간", "리더", "라이브", "순위", "live", "대시보드", "시각화"],
     3: ["심판", "관리자", "패널", "judge"],
     4: ["공지", "사항", "알림", "notice"]
 }
@@ -329,7 +304,6 @@ with c_menu:
 with c_right:
     sub_lang, sub_buttons = st.columns([4, 6])
     with sub_lang:
-        # 언어 딕셔너리의 키를 기반으로 현재 선택된 언어 인덱스 동적 동기화
         lang_keys = list(LANG_DICT.keys())
         current_lang_name = [k for k, v in LANG_DICT.items() if v == st.session_state.current_lang_code]
         default_lang_idx = lang_keys.index(current_lang_name[0]) if current_lang_name else 0
@@ -350,7 +324,7 @@ with c_right:
 
 st.markdown('</div></div>', unsafe_allow_html=True)
 
-# 메인 뷰포트 레이아웃 상자 구동
+# 메인 뷰포트 레이아웃
 st.markdown(f'<div class="centered-wrapper"><div class="hero-section"><div class="hero-title">{T["title"]}</div><div class="hero-subtitle">🏔️ {T["subtitle"]}</div></div></div>', unsafe_allow_html=True)
 st.markdown('<div class="content-box">', unsafe_allow_html=True)
 
@@ -414,19 +388,73 @@ elif st.session_state.menu_idx == 1:
     st.markdown(f"## {T['menu'][1]}")
     with st.form("reg_form"):
         p_name = st.text_input("Athlete Name")
-        p_nation = st.text_input("Country/Team")
+        p_nation = st.text_input("Country/Team").upper()
         p_event = st.selectbox("Category", ["Sprint", "Individual", "Vertical"])
         if st.form_submit_button(T["pay"]) and p_name:
             next_bib = str(100 + len(st.session_state.athletes_domain) + 1)
             st.session_state.athletes_domain[next_bib] = {"Name": p_name, "Team": p_nation, "Category": p_event, "Status": "RACING", "CP1": "--:--:--", "CP2": "--:--:--", "Penalty_Sec": 0, "Final_Record": "--:--:--"}
             st.success(f"선수 등록 완료! 배정 배번호: [{next_bib}]")
 
+# -------------------------------------------------------------------------
+# 1. Telemetry Analytics (대시보드 시각화 기능 탑재)
+# -------------------------------------------------------------------------
 elif st.session_state.menu_idx == 2:
     st.markdown(f"## {T['menu'][2]}")
+    
+    # 딕셔너리 데이터를 Pandas DataFrame으로 전환
     data_list = [{"BIB": b, **i} for b, i in st.session_state.athletes_domain.items()]
-    df = pd.DataFrame(data_list)[["BIB", "Name", "Team", "Category", "Status", "CP1", "CP2", "Penalty_Sec", "Final_Record"]]
-    st.dataframe(df.set_index("BIB"), use_container_width=True)
+    df = pd.DataFrame(data_list)
+    
+    st.markdown(f"### {T['stats_title']}")
+    
+    # 상단 텔레메트리 스코어보드 메트릭 카드
+    m1, m2, m3, m4 = st.columns(4)
+    total_count = len(df)
+    racing_count = len(df[df["Status"] == "RACING"])
+    finished_count = len(df[df["Status"] == "FINISHED"])
+    dnf_count = len(df[df["Status"] == "DNF"])
+    
+    m1.metric(T["total_athletes"], f"{total_count}명")
+    m2.metric(T["racing_athletes"], f"{racing_count}명", delta=f"+{racing_count} LIVE", delta_color="normal")
+    m3.metric(T["finished_athletes"], f"{finished_count}명", line_color="green")
+    m4.metric("DNF / DSQ", f"{dnf_count}명", delta_color="inverse")
+    
+    # Plotly 시각화 세션 (차트 렌더링)
+    c_chart1, c_chart2 = st.columns(2)
+    
+    with c_chart1:
+        # 국가별 참가자 수 바 차트
+        country_counts = df["Team"].value_counts().reset_index()
+        country_counts.columns = ["Country", "Count"]
+        fig_country = px.bar(
+            country_counts, x="Country", y="Count", 
+            title=T["chart_country"], text_auto=True,
+            color="Count", color_continuous_scale="Blugrn"
+        )
+        fig_country.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="white")
+        st.plotly_chart(fig_country, use_container_width=True)
+        
+    with c_chart2:
+        # 종목 카테고리별 도넛 차트
+        cat_counts = df["Category"].value_counts().reset_index()
+        cat_counts.columns = ["Category", "Count"]
+        fig_cat = px.pie(
+            cat_counts, values="Count", names="Category", 
+            title=T["chart_category"], hole=0.4,
+            color_discrete_sequence=px.colors.sequential.RdBu
+        )
+        fig_cat.update_layout(paper_bgcolor="rgba(0,0,0,0)", font_color="white")
+        st.plotly_chart(fig_cat, use_container_width=True)
+        
+    st.markdown("---")
+    
+    # 실시간 데이터 테이블 렌더링
+    df_display = df[["BIB", "Name", "Team", "Category", "Status", "CP1", "CP2", "Penalty_Sec", "Final_Record"]]
+    st.dataframe(df_display.set_index("BIB"), use_container_width=True)
 
+# -------------------------------------------------------------------------
+# 2. Live Toast Alerts (실시간 알림 애니메이션 효과 적용 인터페이스)
+# -------------------------------------------------------------------------
 elif st.session_state.menu_idx == 3:
     st.markdown(f"## {T['menu'][3]}")
     if st.session_state.logged_in_user is None:
@@ -441,10 +469,17 @@ elif st.session_state.menu_idx == 3:
             bib_list = list(st.session_state.athletes_domain.keys())
             selected_bib = st.selectbox("업데이트할 BIB 선택", bib_list)
             new_status = st.selectbox("상태 값 변경", ["RACING", "FINISHED", "DNF", "DSQ"])
+            
             if st.button("🚨 데이터 필드 실시간 동기화"):
+                # 상태 동기화 진행
                 st.session_state.athletes_domain[selected_bib]["Status"] = new_status
-                st.success(f"배번호 {selected_bib}번 선수의 경기 상태가 {new_status}로 변경 및 동기화되었습니다.")
-                time.sleep(0.5)
+                
+                # 우측 하단 Live Toast Alert 유도 문구 바인딩 및 애니메이션 작동
+                toast_msg = T["toast_update"].format(bib=selected_bib, status=new_status)
+                st.toast(toast_msg, icon="🏂")
+                
+                st.success(f"배번호 {selected_bib}번 선수의 경기 상태가 {new_status}로 변경되었습니다.")
+                time.sleep(1.0) # 토스트 애니메이션 확인을 위한 일시정지 버퍼링
                 st.rerun()
 
 elif st.session_state.menu_idx == 4:
