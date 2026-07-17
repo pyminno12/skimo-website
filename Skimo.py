@@ -139,14 +139,14 @@ st.markdown(f"""
     /* 장비 가이드 카드 디자인 */
     .equip-card {{
         background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 15px; border-radius: 12px; margin-bottom: 20px;
+        padding: 15px; border-radius: 12px; margin-bottom: 20px; min-height: 180px;
     }}
     .equip-title {{ font-size: 18px; font-weight: bold; color: #00c6ff; margin-bottom: 8px; }}
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. 6개국 로컬라이제이션 매핑 아키텍처 (장비 가이드 키 추가)
+# 2. 6개국 로컬라이제이션 매핑 아키텍처 (장비 가이드 번역 정밀 통합)
 # ==========================================
 LANG_DICT = {
     "한국어 (KO)": "KO", "English (EN)": "EN", "Français (FR)": "FR",       
@@ -163,7 +163,13 @@ LOCALIZED_TEXT = {
         "ai_btn": "🤖 AI 요약보기", "ai_modal_title": "⚡ Generative AI 실시간 요약 브리핑",
         "stats_title": "📊 실시간 경기 텔레메트리 분석 (Telemetry Analytics)", "total_athletes": "총 참가 선수", "racing_athletes": "현재 레이싱 중", "finished_athletes": "완주 성공",
         "chart_country": "국가별 선수 분포", "chart_category": "세부 종목별 참가 비중", "toast_update": "📢 [실시간 동기화] 배번호 {bib}번 선수의 상태가 {status}로 업데이트되었습니다!",
-        "equip_main_title": "🎿 ISMF 공인 산악스키 필수 5대 장비 안내"
+        "equip_main_title": "🎿 ISMF 공인 산악스키 필수 5대 장비 안내",
+        "equip_sub": "산악스키(Skimo) 대회는 경량화와 안전성이 승패를 가르는 핵심 요소입니다. 국제연맹(ISMF) 규정에 따른 필수 장비들의 가이드입니다.",
+        "e1_t": "1. 초경량 산악스키 (Skimo Skis)", "e1_d": "오르막길을 빠르게 뛰어 올라가야 하므로 일반 알파인 스키에 비해 상상할 수 없을 정도로 가볍습니다. 남성용 기준 최소 780g, 여성용 700g 선으로 제한되며 탄소 섬유(Carbon)로 제작됩니다.",
+        "e2_t": "2. 투어링 바인딩 (Tech Bindings)", "e2_d": "산악스키 바인딩은 업힐 모드 시 뒷굽이 떨어져 걸어 올라갈 수 있게 설계되었습니다. 다운힐 모드 시에는 뒷굽을 고정합니다. 핀(Pin) 테크 방식을 채택해 무게가 겨우 100g 안팎입니다.",
+        "e3_t": "3. 등반용 클라이밍 스킨 (Climbing Skins)", "e3_d": "스키 플레이트 바닥에 붙이는 모헤어(Mohair) 소재의 전용 스킨입니다. 앞방향으로는 미끄러지지만, 뒷방향으로는 털이 서서 눈을 움켜쥐기 때문에 미끄러지지 않고 수직 오르막을 오를 수 있습니다.",
+        "e4_t": "4. 워크 모드 지원 부츠 (Skimo Boots)", "e4_d": "레버 하나로 발목 관절 구동 범위를 60도 이상 확보하는 '워크 모드'와 활강을 위해 고정하는 '스키 모드'를 전환할 수 있습니다. 카본 재질로 발목 피로도를 최소화합니다.",
+        "e5_t": "5. 탄소섬유 카본 폴 (Carbon Poles)", "e5_d": "상체 반동과 팔 근육을 이용해 업힐 추진력을 내는 도구입니다. 일반 스키 폴보다 길며, 샤프트 전체가 100% High-Modulus 카본으로 되어 있어 매우 가볍고 단단한 강성을 유지합니다."
     },
     "EN": {
         "title": "SKIMO KOREA", "subtitle": "Ski Mountaineering Information Portal",
@@ -174,7 +180,13 @@ LOCALIZED_TEXT = {
         "ai_btn": "🤖 View AI Summary", "ai_modal_title": "⚡ Generative AI Real-time Briefing",
         "stats_title": "📊 Live Telemetry Analytics", "total_athletes": "Total Athletes", "racing_athletes": "Racing Now", "finished_athletes": "Finished",
         "chart_country": "Athletes by Country", "chart_category": "Participation by Category", "toast_update": "📢 [Live Sync] Athlete #{bib} status updated to {status}!",
-        "equip_main_title": "🎿 ISMF Official Ski Mountaineering Mandatory Equipment"
+        "equip_main_title": "🎿 ISMF Official Ski Mountaineering Mandatory Equipment",
+        "equip_sub": "In Skimo racing, lightweight tech and safety are key. Here is the mandatory gear guide under ISMF rules.",
+        "e1_t": "1. Ultra-Lightweight Skis", "e1_d": "Extremely light for fast uphill climbing. Minimum weight is restricted to 780g for men and 700g for women, made primarily of carbon fiber.",
+        "e2_t": "2. Tech Tour Bindings", "e2_d": "Designed with a free-heel system for walking uphill, and locks down for alpine descents. Tech pin system keeps weight around 100g.",
+        "e3_t": "3. Climbing Skins", "e3_d": "Mohair-based skins attached to ski bases. They glide forward smoothly but grip the snow firmly when moving backwards to allow vertical climbing.",
+        "e4_t": "4. Walk-Mode Boots", "e4_d": "Features a swift lever switching between a 60° ankle rotation 'Walk Mode' and a rigid 'Ski Mode' for high-speed alpine descents.",
+        "e5_t": "5. Carbon Racing Poles", "e5_d": "Provides essential upper-body propulsion during climbs. Slightly longer than alpine poles, built with 100% high-modulus carbon fiber."
     },
     "FR": {
         "title": "SKIMO KOREA", "subtitle": "Portail d'information sur le ski-alpinisme",
@@ -185,7 +197,13 @@ LOCALIZED_TEXT = {
         "ai_btn": "🤖 Voir le résumé de l'AI", "ai_modal_title": "⚡ Briefing en temps réel de l'IA générative",
         "stats_title": "📊 Analyse télémétrique en direct", "total_athletes": "Total des athlètes", "racing_athletes": "En course", "finished_athletes": "Terminé",
         "chart_country": "Athlètes par pays", "chart_category": "Participation par catégorie", "toast_update": "📢 [Sync en direct] Le statut de l'athlète #{bib} a été mis à jour en {status}!",
-        "equip_main_title": "🎿 Équipement obligatoire officiel de ski-alpinisme de l'ISMF"
+        "equip_main_title": "🎿 Équipement obligatoire officiel de ski-alpinisme de l'ISMF",
+        "equip_sub": "En ski-alpinisme, la légèreté et la sécurité sont cruciales. Voici le guide du matériel obligatoire selon l'ISMF.",
+        "e1_t": "1. Skis ultra-légers", "e1_d": "Extrêmement légers pour les montées rapides. Limité à un minimum de 780g pour les hommes et 700g pour les femmes, fabriqués en fibre de carbone.",
+        "e2_t": "2. Fixations Tech", "e2_d": "Conçues avec un système de talon libre pour la montée et verrouillables pour la descente. Le système à broches limite le poids à environ 100g.",
+        "e3_t": "3. Peaux de phoque", "e3_d": "Peaux en mohair fixées sous les skis. Elles glissent vers l'avant mais agrippent la neige vers l'arrière pour permettre les ascensions verticales.",
+        "e4_t": "4. Chaussures avec mode marche", "e4_d": "Dotées d'un levier basculant entre un 'Mode Marche' à 60° de rotation et un 'Mode Ski' rigide pour les descentes alpines rapides.",
+        "e5_t": "5. Bâtons de course en carbone", "e5_d": "Fournissent la propulsion du haut du corps en montée. Plus longs que les bâtons alpins, 100% en fibre de carbone haute rigidité."
     },
     "IT": {
         "title": "SKIMO KOREA", "subtitle": "Portale informativo sullo sci alpinismo",
@@ -195,8 +213,14 @@ LOCALIZED_TEXT = {
         "news_title": "📰 News & Stories (Ultime notizie globali)", "search_holder": "🔍 Cerca informazioni...", "notice": "📢 Avviso", "auth": "👤 Accedi/Registrati",
         "ai_btn": "🤖 Visualizza il riepilogo dell'IA", "ai_modal_title": "⚡ Briefing in tempo reale dell'IA generativa",
         "stats_title": "📊 Analisi telemetrica in tempo reale", "total_athletes": "Atleti totali", "racing_athletes": "In gara ora", "finished_athletes": "Finito",
-        "chart_country": "Atleti per paese", "chart_category": "Partecipazione per categoria", "toast_update": "📢 [Sincronizzazione live] Lo stato dell'atleta #{bib} è stato aggiornato a {status}!" ,
-        "equip_main_title": "🎿 Attrezzatura obbligatoria ufficiale di sci alpinismo ISMF"
+        "chart_country": "Atleti per paese", "chart_category": "Partecipazione per categoria", "toast_update": "📢 [Sincronizzazione live] Lo stato dell'atleta #{bib} è stato aggiornato a {status}!", 
+        "equip_main_title": "🎿 Attrezzatura obbligatoria ufficiale di sci alpinismo ISMF",
+        "equip_sub": "Nello sci alpinismo, la leggerezza e la sicurezza sono fondamentali. Ecco la guida ai materiali secondo le regole ISMF.",
+        "e1_t": "1. Sci ultraleggeri", "e1_d": "Estremamente leggeri per salite veloci. Peso minimo limitato a 780g per gli uomini e 700g per le donne, realizzati in fibra di carbonio.",
+        "e2_t": "2. Attacchi da alpinismo (Tech)", "e2_d": "Progettati con tallone libero per la camminata in salita e bloccabili per la discesa. Il sistema a perni mantiene il peso intorno ai 100g.",
+        "e3_t": "3. Pelli di foca (Skins)", "e3_d": "Pelli in mohair applicate sotto la soletta. Scivolano in avanti ma fanno presa sulla neve all'indietro per consentire la salita verticale.",
+        "e4_t": "4. Scarponi modalità Walk", "e4_d": "Dotati di una leva rapida che passa dalla modalità 'Walk' (rotazione caviglia >60°) alla modalità 'Ski' rigida per la discesa.",
+        "e5_t": "5. Bastoncini in carbonio", "e5_d": "Forniscono la propulsione essenziale della parte superiore del corpo. Più lunghi dei bastoncini alpini, 100% in carbonio ad alto modulo."
     },
     "ZH": {
         "title": "SKIMO KOREA", "subtitle": "滑雪登山信息门户网站",
@@ -207,18 +231,30 @@ LOCALIZED_TEXT = {
         "ai_btn": "🤖 查看 AI 摘要", "ai_modal_title": "⚡ 生成式 AI 实时简报",
         "stats_title": "📊 实时比赛遥测数据分析 (Telemetry Analytics)", "total_athletes": "总参赛人数", "racing_athletes": "正在比赛中", "finished_athletes": "成功完赛",
         "chart_country": "各国选手分布", "chart_category": "各项目报名比例", "toast_update": "📢 [实时同步] 号码牌 {bib} 选手状态已更新为 {status}!",
-        "equip_main_title": "🎿 ISMF 官方滑雪登山强制性装备指南"
+        "equip_main_title": "🎿 ISMF 官方滑雪登山强制性装备指南",
+        "equip_sub": "在滑雪登山比赛中，极致轻量化与安全性是取胜关键。以下是符合ISMF规定的必备装备要求。",
+        "e1_t": "1. 超轻量滑雪板", "e1_d": "极轻的重量设计便于快速攀登。男子雪板最低限重780克，女子最低700克，主要采用碳纤维材质打造。",
+        "e2_t": "2. 科技巡航固定器", "e2_d": "专为攀登时后跟分离设计，便于行走；滑降时可锁定后跟。采用插销技术，重量仅在100克左右。",
+        "e3_t": "3. 防滑攀登雪皮", "e3_d": "贴在雪板底部的马海毛材质专用雪皮。向前可平滑向前滑行，向后时绒毛抓雪倒伏防滑，实现垂直攀登。",
+        "e4_t": "4. 步行模式滑雪鞋", "e4_d": "具备快速换挡杆，可在提供60度以上踝关节活动度的“步行模式”与高强度滑降的“滑雪模式”之间自由切换。",
+        "e5_t": "5. 碳纤维竞赛雪杖", "e5_d": "用于在攀登过程中提供上肢推进力。长度略长于普通高山雪杖，由100%高模量碳纤维制成，极轻且坚硬。"
     },
     "JA": {
         "title": "SKIMO KOREA", "subtitle": "山岳スキー情報ポータル",
         "menu": ["大会ホーム", "選手参加申込", "リアルタイムリーダーボード", "🎿 必須ギアガイド", "🔐 審判/管理者パネル", "📢 グローバルお知らせ"],
-        "desc": "本大会は国際山岳スキー連盟（ISMF）の規定に準拠しています。スコ아やペナルティは、フィールドのウェブアプリを通じてリアルタイムで集計されます。",
+        "desc": "本大会은 国際山岳スキー連盟（ISMF）の規定に準拠しています。スコアやペナルティは、フィールドのウェブアプリを通じてリアルタイムで集計されます。",
         "video": "📺 山岳スキー規則動画", "intro_video": "⛷️ 山岳スキーとは？", "photo": "📸 オリンピックギャラリー", "pay": "💳 参加申込と安全な決済",
         "news_title": "📰 News & Stories (最新のグローバルニュース)", "search_holder": "🔍 情報を検索...", "notice": "📢 お知らせ", "auth": "👤 ログイン/会員登録",
         "ai_btn": "🤖 AI要約を見る", "ai_modal_title": "⚡ 生成AIリアルタイムブリーフィング",
         "stats_title": "📊 リアルタイム競技テレメトリ分析 (Telemetry Analytics)", "total_athletes": "総参加選手数", "racing_athletes": "現在レース中", "finished_athletes": "完走者数",
-        "chart_country": "国別選手分布", "chart_category": "種目別参加比率", "toast_update": "📢 [ライブ同期] ゼッケン {bib} 番의 選手ステータスが {status} に更新されました！",
-        "equip_main_title": "🎿 ISMF 公認 山岳スキー必須5大ギアガイド"
+        "chart_country": "国別選手分布", "chart_category": "種目別参加比率", "toast_update": "📢 [ライブ同期] ゼッケン {bib} 番の 選手ステータスが {status} に更新されました！",
+        "equip_main_title": "🎿 ISMF 公認 山岳スキー必須5大ギアガイド",
+        "equip_sub": "山岳スキーレースでは、軽量化と安全性が勝敗を分けます。ISMF規定に基づく必須ギアの解説です。",
+        "e1_t": "1. 超軽量山岳スキー板", "e1_d": "登高で素早く駆け上がるため非常に軽いです。男子は最低780g、女子は700gに制限され、カーボンファイバーで製造されます。",
+        "e2_t": "2. テックビンディング", "e2_d": "登りではヒールが上がり歩行可能で、滑走時はヒールを固定します。ピンテック方式を採用し、重量はわずか100g前後です。",
+        "e3_t": "3. クライミングスキン", "e3_d": "滑走面に貼り付けるモヘア素材의 専用スキンです。前方には滑りますが、後方には毛が立ち雪を掴むため、斜面を垂直に登れます。",
+        "e4_t": "4. ウォークモード対応ブーツ", "e4_d": "レバー一つで足首の可動域を60度以上確保する「ウォークモード」と、滑走用に固定する「スキーモード」を切り替えられる軽量カーボンブーツです。",
+        "e5_t": "5. カーボンレーシングポール", "e5_d": "上半身の推進力を得るための道具です。通常のアルペンポールより長めで、100%高弾性カーボン製のため非常に軽く頑丈です。"
     }
 }
 
@@ -435,11 +471,11 @@ elif st.session_state.menu_idx == 2:
     st.dataframe(df_display.set_index("BIB"), use_container_width=True)
 
 # -------------------------------------------------------------------------
-# [🆕 추가 메뉴: 🎿 필수 장비 가이드 가로 그리드 레이아웃]
+# [🎿 필수 장비 가이드 - 6개국 언어 실시간 연동 완료]
 # -------------------------------------------------------------------------
 elif st.session_state.menu_idx == 3:
     st.markdown(f"## {T['equip_main_title']}")
-    st.write("산악스키(Skimo) 대회는 경량화와 안전성이 승패를 가르는 핵심 요소입니다. 국제연맹(ISMF) 규정에 따른 필수 장비들의 가이드입니다.")
+    st.write(T['equip_sub'])
     st.write("---")
     
     # 5대 장비를 깔끔하게 3열 / 2열 그리드로 나누어 시각화
@@ -447,46 +483,46 @@ elif st.session_state.menu_idx == 3:
     row2_c1, row2_c2 = st.columns(2)
     
     with row1_c1:
-        st.markdown("""
+        st.markdown(f"""
         <div class="equip-card">
-            <div class="equip-title">1. 초경량 산악스키 (Skimo Skis)</div>
-            <p style='font-size:14px; color:#cbd5e1;'>오르막길을 빠르게 뛰어 올라가야 하므로 일반 알파인 스키에 비해 상상할 수 없을 정도로 가볍습니다. 남성용 기준 최소 780g, 여성용 700g 선으로 제한되며 탄소 섬유(Carbon)로 제작됩니다.</p>
+            <div class="equip-title">{T['e1_t']}</div>
+            <p style='font-size:14px; color:#cbd5e1;'>{T['e1_d']}</p>
         </div>
         """, unsafe_allow_html=True)
         st.image("https://images.unsplash.com/photo-1605548230624-8d2d0419c517?auto=format&fit=crop&w=500&q=80", caption="Carbon Light Skis", use_container_width=True)
         
     with row1_c2:
-        st.markdown("""
+        st.markdown(f"""
         <div class="equip-card">
-            <div class="equip-title">2. 투어링 바인딩 (Tech Bindings)</div>
-            <p style='font-size:14px; color:#cbd5e1;'>산악스키 바인딩은 업힐 모드 시 뒷굽이 떨어져 걸어 올라갈 수 있게 설계되었습니다. 다운힐 모드 시에는 뒷굽을 고정합니다. 핀(Pin) 테크 방식을 채택해 무게가 겨우 100g 안팎입니다.</p>
+            <div class="equip-title">{T['e2_t']}</div>
+            <p style='font-size:14px; color:#cbd5e1;'>{T['e2_d']}</p>
         </div>
         """, unsafe_allow_html=True)
         st.image("https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=500&q=80", caption="Tech Binding System", use_container_width=True)
         
     with row1_c3:
-        st.markdown("""
+        st.markdown(f"""
         <div class="equip-card">
-            <div class="equip-title">3. 등반용 클라이밍 스킨 (Climbing Skins)</div>
-            <p style='font-size:14px; color:#cbd5e1;'>스키 플레이트 바닥에 붙이는 모헤어(Mohair) 소재의 전용 스킨입니다. 앞방향으로는 미끄러지지만, 뒷방향으로는 털이 서서 눈을 움켜쥐기 때문에 미끄러지지 않고 수직 오르막을 오를 수 있습니다.</p>
+            <div class="equip-title">{T['e3_t']}</div>
+            <p style='font-size:14px; color:#cbd5e1;'>{T['e3_d']}</p>
         </div>
         """, unsafe_allow_html=True)
         st.image("https://images.unsplash.com/photo-1614531341773-3bef8ca0da3b?auto=format&fit=crop&w=500&q=80", caption="Climbing Skins Setup", use_container_width=True)
 
     with row2_c1:
-        st.markdown("""
+        st.markdown(f"""
         <div class="equip-card">
-            <div class="equip-title">4. 워크 모드 지원 부츠 (Skimo Boots)</div>
-            <p style='font-size:14px; color:#cbd5e1;'>레버 하나로 발목 관절 구동 범위를 60도 이상 확보하는 '워크 모드'와 활강을 위해 고정하는 '스키 모드'를 전환할 수 있습니다. 카본 재질로 발목 피로도를 최소화합니다.</p>
+            <div class="equip-title">{T['e4_t']}</div>
+            <p style='font-size:14px; color:#cbd5e1;'>{T['e4_d']}</p>
         </div>
         """, unsafe_allow_html=True)
         st.image("https://images.unsplash.com/photo-1518098268026-4e43a1a009de?auto=format&fit=crop&w=500&q=80", caption="Lightweight Boots", use_container_width=True)
         
     with row2_c2:
-        st.markdown("""
+        st.markdown(f"""
         <div class="equip-card">
-            <div class="equip-title">5. 탄소섬유 카본 폴 (Carbon Poles)</div>
-            <p style='font-size:14px; color:#cbd5e1;'>상체 반동과 팔 근육을 이용해 업힐 추진력을 내는 도구입니다. 일반 스키 폴보다 길며, 샤프트 전체가 100% High-Modulus 카본으로 되어 있어 매우 가볍고 단단한 강성을 유지합니다.</p>
+            <div class="equip-title">{T['e5_t']}</div>
+            <p style='font-size:14px; color:#cbd5e1;'>{T['e5_d']}</p>
         </div>
         """, unsafe_allow_html=True)
         st.image("https://images.unsplash.com/photo-1482867996988-2faec3cbb4f9?auto=format&fit=crop&w=500&q=80", caption="Racing Carbon Poles", use_container_width=True)
