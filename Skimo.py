@@ -86,7 +86,7 @@ if "home_news_domain" not in st.session_state:
                 "JA": "🚀 2030年フランス・アルプス冬季オリンピック、山岳スキー詳細種目規定がまもなく発表予定"
             },
             "ai_summary": {
-                "KO": "🤖 **AI 요약:** 2030 프랑스 동계 올림픽 조직위 and ISMF가 산악스키 정식 종목 채택에 따른 세부 중계 및 페널티 규정을 내달 확정합니다.\n\n💡 **핵심 키워드:** `#2030동계올림픽` `#ISMF규정`",
+                "KO": "🤖 **AI 요약:** 2030 프랑스 동계 올림픽 조직위 및 ISMF가 산악스키 정식 종목 채택에 따른 세부 중계 및 페널티 규정을 내달 확정합니다.\n\n💡 **핵심 키워드:** `#2030동계올림픽` `#ISMF규정`",
                 "EN": "🤖 **AI Summary:** The 2030 French Winter Olympics Committee and ISMF will finalize detailed regulations next month.\n\n💡 **Keywords:** `#WinterOlympics2030` `#ISMF_Rules`"
             }
         }
@@ -146,10 +146,10 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. 6개국 로컬라이제이션 매핑 아키텍처 (장비 가이드 번역 정밀 통합)
+# 2. 6개국 로컬라이제이션 매핑 아키텍처
 # ==========================================
 LANG_DICT = {
-    "한국어 (KO)": "KO", "English (EN)": "EN", "Français (FR)": "FR",       
+    "한국어 (KO)": "KO", "English (EN)": "EN", "Français (FR)": "FR",        
     "Italiano (IT)": "IT", "简体中文 (ZH)": "ZH", "日本語 (JA)": "JA"          
 }
 
@@ -478,7 +478,7 @@ elif st.session_state.menu_idx == 3:
     st.write(T['equip_sub'])
     st.write("---")
     
-    # 5대 장비를 깔끔하게 3열 / 2열 그리드로 나누어 시각화
+    # 5대 장비를 3열 / 2열 그리드로 나누어 시각화
     row1_c1, row1_c2, row1_c3 = st.columns(3)
     row2_c1, row2_c2 = st.columns(2)
     
@@ -516,8 +516,8 @@ elif st.session_state.menu_idx == 3:
             <p style='font-size:14px; color:#cbd5e1;'>{T['e4_d']}</p>
         </div>
         """, unsafe_allow_html=True)
-        st.image("https://images.unsplash.com/photo-1518098268026-4e43a1a009de?auto=format&fit=crop&w=500&q=80", caption="Lightweight Boots", use_container_width=True)
-        
+        st.image("https://images.unsplash.com/photo-1482867996988-2faec3cbb4f9?auto=format&fit=crop&w=500&q=80", caption="Walk-Mode Skimo Boots", use_container_width=True)
+
     with row2_c2:
         st.markdown(f"""
         <div class="equip-card">
@@ -525,35 +525,69 @@ elif st.session_state.menu_idx == 3:
             <p style='font-size:14px; color:#cbd5e1;'>{T['e5_d']}</p>
         </div>
         """, unsafe_allow_html=True)
-        st.image("https://images.unsplash.com/photo-1482867996988-2faec3cbb4f9?auto=format&fit=crop&w=500&q=80", caption="Racing Carbon Poles", use_container_width=True)
+        st.image("https://images.unsplash.com/photo-1518098268026-4e43a1a009de?auto=format&fit=crop&w=500&q=80", caption="Carbon Racing Poles", use_container_width=True)
 
+# -------------------------------------------------------------------------
+# [🔐 심판 / 관리자 패널]
+# -------------------------------------------------------------------------
 elif st.session_state.menu_idx == 4:
     st.markdown(f"## {T['menu'][4]}")
-    if st.session_state.logged_in_user is None:
-        st.warning("⚠️ 권한 경고: 심판 계정으로 로그인이 필요합니다.")
+    
+    current_user = st.session_state.logged_in_user
+    current_db = load_user_db()
+    
+    # 심판/관리자 권한 검증
+    if not current_user or current_db.get(current_user, {}).get("role") not in ["ADMIN", "JUDGE"]:
+        st.warning("⚠️ 이 메뉴는 심판(JUDGE) 및 관리자(ADMIN) 권한이 있는 계정만 접근할 수 있습니다.")
+        st.info("테스트용 심판 계정: `skimo` / `skimo123`  |  관리자 계정: `admin` / `1234`로 상단에서 로그인하세요.")
     else:
-        current_db = load_user_db()
-        user_role = current_db.get(st.session_state.logged_in_user, {}).get("role", "USER")
-        if user_role not in ["ADMIN", "JUDGE"]:
-            st.error("🚫 접근 거부: 심판/관리자 패널을 조작할 권한이 없습니다.")
-        else:
-            bib_list = list(st.session_state.athletes_domain.keys())
-            selected_bib = st.selectbox("업데이트할 BIB 선택", bib_list)
-            new_status = st.selectbox("상태 값 변경", ["RACING", "FINISHED", "DNF", "DSQ"])
-            if st.button("🚨 데이터 필드 실시간 동기화"):
-                st.session_state.athletes_domain[selected_bib]["Status"] = new_status
-                toast_msg = T["toast_update"].format(bib=selected_bib, status=new_status)
-                st.toast(toast_msg, icon="🏂")
-                st.success(f"배번호 {selected_bib}번 선수의 경기 상태가 {new_status}로 변경되었습니다.")
-                time.sleep(1.0)
-                st.rerun()
+        st.success(f"🔑 현장 심판/관리자 전용 제어판에 접속하셨습니다. (접속자: **{current_user}**)")
+        st.markdown("---")
+        
+        target_bib = st.selectbox("선수 선택 (배번호)", list(st.session_state.athletes_domain.keys()))
+        athlete_data = st.session_state.athletes_domain[target_bib]
+        
+        with st.form("judge_control_form"):
+            c_j1, c_j2 = st.columns(2)
+            with c_j1:
+                new_status = st.selectbox("경기 상태 (Status)", ["RACING", "FINISHED", "DNF", "DSQ"], index=["RACING", "FINISHED", "DNF", "DSQ"].index(athlete_data["Status"]))
+                new_cp1 = st.text_input("체크포인트 1 (CP1)", value=athlete_data["CP1"])
+                new_cp2 = st.text_input("체크포인트 2 (CP2)", value=athlete_data["CP2"])
+            with c_j2:
+                new_penalty = st.number_input("추가 페널티(초)", value=int(athlete_data["Penalty_Sec"]), min_value=0, step=5)
+                new_final = st.text_input("최종 기록 (Final Record)", value=athlete_data["Final_Record"])
+                
+            if st.form_submit_button("💾 기록 반영 및 전 세계 실시간 동기화"):
+                st.session_state.athletes_domain[target_bib].update({
+                    "Status": new_status,
+                    "CP1": new_cp1,
+                    "CP2": new_cp2,
+                    "Penalty_Sec": new_penalty,
+                    "Final_Record": new_final
+                })
+                toast_msg = T["toast_update"].format(bib=target_bib, status=new_status)
+                st.toast(toast_msg)
+                st.success(f"✅ 배번호 [{target_bib}] {athlete_data['Name']} 선수의 기록이 업데이트되었습니다.")
 
+# -------------------------------------------------------------------------
+# [📢 글로벌 공지사항]
+# -------------------------------------------------------------------------
 elif st.session_state.menu_idx == 5:
     st.markdown(f"## {T['menu'][5]}")
+    st.markdown("---")
+    
     lang_code = st.session_state.current_lang_code
-    for item in st.session_state.notice_domain:
-        title_text = item["title"].get(lang_code, item["title"]["EN"])
-        content_text = item["content"].get(lang_code, item["content"]["EN"])
-        st.markdown(f'<div class="notice-card"><div><span class="notice-badge">{item["category"]}</span><span>📅 {item["date"]}</span></div><div style="font-size:18px; font-weight:600; margin:10px 0;">{title_text}</div><div>{content_text}</div></div>', unsafe_allow_html=True)
+    for notice in st.session_state.notice_domain:
+        n_title = notice["title"].get(lang_code, notice["title"]["EN"])
+        n_content = notice["content"].get(lang_code, notice["content"]["EN"])
+        
+        st.markdown(f"""
+        <div class="notice-card">
+            <span class="notice-badge">{notice['category']}</span>
+            <span style="font-size:13px; color:#cbd5e1;">📅 {notice['date']}</span>
+            <h3 style="margin-top:10px; margin-bottom:10px; color:#00c6ff;">{n_title}</h3>
+            <p style="font-size:15px; color:#e2e8f0; line-height:1.6;">{n_content}</p>
+        </div>
+        """, unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
