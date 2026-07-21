@@ -1,356 +1,559 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Skimo Equipment Guide</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      background-color: #0f172a;
-      color: #f8fafc;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      padding: 24px;
-    }
-    .header-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-    }
-    .lang-select {
-      background: #1e293b;
-      color: #38bdf8;
-      border: 1px solid #334155;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .grid-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 20px;
-    }
-    .card {
-      background-color: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 12px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .card-content {
-      padding: 20px;
-      flex: 1;
-    }
-    .card-title {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #38bdf8;
-      margin-bottom: 12px;
-    }
-    .card-desc {
-      font-size: 0.9rem;
-      color: #94a3b8;
-      line-height: 1.6;
-    }
-    .card-img-wrapper {
-      width: 100%;
-      height: 220px;
-      background-color: #0f172a;
-      position: relative;
-    }
-    .card-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .img-caption {
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      background: rgba(15, 23, 42, 0.8);
-      color: #cbd5e1;
-      text-align: center;
-      padding: 6px;
-      font-size: 0.8rem;
-    }
-  </style>
-</head>
-<body>
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+from datetime import datetime
+import time
+import json
 
-  <div class="header-bar">
-    <h1 id="page-title">필수 장비 가이드</h1>
-    <select id="lang-picker" class="lang-select" onchange="changeLanguage(this.value)">
-      <option value="KO" selected>한국어 (KO)</option>
-      <option value="EN">English (EN)</option>
-      <option value="FR">Français (FR)</option>
-      <option value="IT">Italiano (IT)</option>
-      <option value="ZH">中文 (ZH)</option>
-      <option value="JA">日本語 (JA)</option>
-    </select>
-  </div>
+# ==========================================
+# 1. 페이지 설정 및 글로벌 상태 정의
+# ==========================================
+st.set_page_config(page_title="SKIMO KOREA", page_icon="🏔️", layout="wide")
 
-  <div class="grid-container" id="equipment-grid">
-    <!-- 동적 카드 생성 영역 -->
-  </div>
+# 배경 이미지 풀 (장비 가이드용 배경 이미지 추가 포함)
+BG_IMAGES = [
+    "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80",  
+    "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=1800&q=80",  
+    "https://images.unsplash.com/photo-1614531341773-3bef8ca0da3b?auto=format&fit=crop&w=1800&q=80",  
+    "https://images.unsplash.com/photo-1482867996988-2faec3cbb4f9?auto=format&fit=crop&w=1800&q=80",
+    "https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=1800&q=80", # 장비 가이드용 배경
+    "https://images.unsplash.com/photo-1518098268026-4e43a1a009de?auto=format&fit=crop&w=1800&q=80"   
+]
 
-  <script>
-    // 6개국어 완벽 통합 텍스트 정의
-    const LOCALIZED_TEXT = {
-      KO: {
-        pageTitle: "필수 장비 가이드",
-        items: [
-          {
-            title: "1. 초경량 산악스키 (Skimo Skis)",
-            desc: "오르막길을 빠르게 뛰어 올라가야 하므로 일반 알파인 스키에 비해 상상할 수 없을 정도로 가볍습니다. 남성용 기준 최소 780g, 여성용 700g 선으로 제한되며 탄소 섬유(Carbon)로 제작됩니다.",
-            img: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=800&q=80",
-            caption: "Carbon Light Skis"
-          },
-          {
-            title: "2. 투어링 바인딩 (Tech Bindings)",
-            desc: "산악스키 바인딩은 업힐 모드 시 뒷굽이 떨어져 걸어 올라갈 수 있게 설계되었습니다. 다운힐 모드 시에는 뒷굽을 고정합니다. 핀(Pin) 테크 방식을 채택해 무게가 겨우 100g 안팎입니다.",
-            img: "https://images.unsplash.com/photo-1565992441121-4367c2967103?auto=format&fit=crop&w=800&q=80",
-            caption: "Tech Binding System"
-          },
-          {
-            title: "3. 등반용 클라이밍 스킨 (Climbing Skins)",
-            desc: "스키 플레이트 바닥에 붙이는 모헤어(Mohair) 소재의 전용 스킨입니다. 앞방향으로는 미끄러지지만, 뒷방향으로는 털이 서서 눈을 움켜쥐기 때문에 미끄러지지 않고 수직 오르막을 오를 수 있습니다.",
-            img: "https://images.unsplash.com/photo-1548783307-e83c21a4fa8a?auto=format&fit=crop&w=800&q=80",
-            caption: "Climbing Skins Setup"
-          },
-          {
-            title: "4. 워크 모드 지원 부츠 (Skimo Boots)",
-            desc: "레버 하나로 발목 관절 구동 범위를 60도 이상 확보하는 '워크 모드'와 활강을 위해 고정하는 '스키 모드'를 전환할 수 있습니다. 경량화를 위해 카본 셸을 적극 활용합니다.",
-            img: "https://images.unsplash.com/photo-1517649763962-0c6232662000?auto=format&fit=crop&w=800&q=80",
-            caption: "Ultralight Skimo Boots"
-          },
-          {
-            title: "5. 탄소섬유 카본 폴 (Carbon Poles)",
-            desc: "상체 반동과 팔 근육을 이용해 업힐 추진력을 내는 도구입니다. 일반 스키 폴보다 길며, 샤프트 전체가 100% High-Modulus Carbon으로 제작되어 극강의 경량성을 확보합니다.",
-            img: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
-            caption: "Carbon Fiber Touring Poles"
-          }
+if "menu_idx" not in st.session_state:
+    st.session_state.menu_idx = 0
+if "logged_in_user" not in st.session_state:
+    st.session_state.logged_in_user = None
+
+# [브라우저 쿠키/로컬 스토리지 대용 구조]
+DB_FILE = "user_database.json"
+
+def load_user_db():
+    try:
+        with open(DB_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        initial_db = {
+            "admin": {"pw": "1234", "role": "ADMIN"},
+            "skimo": {"pw": "skimo123", "role": "JUDGE"}
+        }
+        save_user_db(initial_db)
+        return initial_db
+
+def save_user_db(db_data):
+    with open(DB_FILE, "w", encoding="utf-8") as f:
+        json.dump(db_data, f, ensure_ascii=False, indent=4)
+
+st.session_state.user_db = load_user_db()
+
+# 실시간 계측/타이밍 데이터
+if "athletes_domain" not in st.session_state:
+    st.session_state.athletes_domain = {
+        "101": {"Name": "김민우", "Team": "KOREA", "Category": "Sprint", "Status": "RACING", "CP1": "10:15:20", "CP2": "--:--:--", "Penalty_Sec": 0, "Final_Record": "--:--:--"},
+        "102": {"Name": "Alex Smith", "Team": "USA", "Category": "Individual", "Status": "RACING", "CP1": "10:14:05", "CP2": "10:45:12", "Penalty_Sec": 0, "Final_Record": "--:--:--"},
+        "103": {"Name": "Chloe", "Team": "FRANCE", "Category": "Vertical", "Status": "FINISHED", "CP1": "10:16:55", "CP2": "10:49:30", "Penalty_Sec": 10, "Final_Record": "11:05:14"},
+        "104": {"Name": "Takahashi", "Team": "JAPAN", "Category": "Sprint", "Status": "RACING", "CP1": "10:20:11", "CP2": "--:--:--", "Penalty_Sec": 0, "Final_Record": "--:--:--"},
+        "105": {"Name": "Li Wei", "Team": "CHINA", "Category": "Individual", "Status": "DNF", "CP1": "10:11:00", "CP2": "--:--:--", "Penalty_Sec": 0, "Final_Record": "--:--:--"},
+    }
+
+# 공지사항 데이터
+if "notice_domain" not in st.session_state:
+    st.session_state.notice_domain = [
+        {
+            "date": "2026-06-15", "category": "🏆 Race Info",
+            "title": {
+                "KO": "2026/27 ISMF 산악스키 월드컵 개막전 일정 확정 (프랑스 알프스)",
+                "EN": "2026/27 ISMF Ski Mountaineering World Cup Opening Venue Confirmed (French Alps)"
+            },
+            "content": {
+                "KO": "국제산악스키연맹(ISMF)이 다가오는 시즌 개막전을 프랑스 알프스에서 개최한다고 밝혔습니다.",
+                "EN": "The ISMF announced that the upcoming season opener will be held in the French Alps."
+            }
+        }
+    ]
+
+# 뉴스 및 AI 요약 데이터
+if "home_news_domain" not in st.session_state:
+    st.session_state.home_news_domain = [
+        {
+            "id": "news_01", "date": "2026-06-18", "link": "https://www.ismf-ski.org/",
+            "title": {
+                "KO": "🚀 2030 프랑스 알프스 동계 올림픽, 산악스키 세부 종목 규정 발표 예정",
+                "EN": "🚀 2030 French Alps Winter Olympics: Detailed Skimo Regulations to be Announced",
+                "FR": "🚀 Jeux Olympiques d'hiver des Alpes Françaises 2030 : Les règlements détaillés du Skimo seront annoncés",
+                "IT": "🚀 Olimpiadi Invernali delle Alpi Francesi 2030: Saranno annunciati i regolamenti dettagliati dello Skimo",
+                "ZH": "🚀 2030年法国阿尔卑斯冬季奥运会：滑雪登山详细项目规则即将公布",
+                "JA": "🚀 2030年フランス・アルプス冬季オリンピック、山岳スキー詳細種目規定がまもなく発表予定"
+            },
+            "ai_summary": {
+                "KO": "🤖 **AI 요약:** 2030 프랑스 동계 올림픽 조직위 and ISMF가 산악스키 정식 종목 채택에 따른 세부 중계 및 페널티 규정을 내달 확정합니다.\n\n💡 **핵심 키워드:** `#2030동계올림픽` `#ISMF규정`",
+                "EN": "🤖 **AI Summary:** The 2030 French Winter Olympics Committee and ISMF will finalize detailed regulations next month.\n\n💡 **Keywords:** `#WinterOlympics2030` `#ISMF_Rules`"
+            }
+        }
+    ]
+
+selected_bg = BG_IMAGES[st.session_state.menu_idx] if st.session_state.menu_idx < len(BG_IMAGES) else BG_IMAGES[0]
+
+st.markdown(f"""
+    <style>
+    header[data-testid="stHeader"] {{ display: none !important; }}
+    .stAppDeployDropdown {{ display: none !important; }}
+    [data-testid="stSidebar"] {{ display: none !important; }}
+    .block-container {{ padding-top: 0rem; padding-bottom: 0rem; padding-left: 0rem; padding-right: 0rem; }}
+    
+    .stApp {{
+        background: linear-gradient(rgba(15, 32, 39, 0.85), rgba(44, 83, 100, 0.75)), url('{selected_bg}') no-repeat center center fixed;
+        background-size: cover !important;
+    }}
+    
+    .centered-wrapper {{ max-width: 1200px; margin: 0 auto; padding: 0 20px; }}
+    .custom-header-bg {{ background-color: rgba(15, 32, 39, 0.4); backdrop-filter: blur(5px); width: 100%; padding: 10px 0; }}
+    
+    .hero-section {{ height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; }}
+    .hero-title {{ font-size: 42px; font-weight: 800; text-shadow: 3px 3px 8px rgba(0,0,0,0.9); margin-bottom: 5px; }}
+    .hero-subtitle {{ font-size: 18px; font-weight: 500; color: #00c6ff; text-shadow: 2px 2px 4px rgba(0,0,0,0.7); }}
+    
+    .content-box {{ 
+        max-width: 1200px; margin: 0 auto 50px auto; padding: 30px; background: rgba(255, 255, 255, 0.07);
+        backdrop-filter: blur(10px); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff;
+    }}
+    
+    div.stButton > button {{
+        background: transparent !important; color: white !important; border: none !important;
+        font-size: 14px !important; font-weight: 500 !important;
+    }}
+    div.stButton > button:hover {{ color: #00c6ff !important; }}
+    
+    .news-flex-container {{ display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 5px 0; }}
+    .news-title-link {{ font-size: 15px; font-weight: 500; color: #e2e8f0; text-decoration: none; }}
+    .news-title-link:hover {{ color: #00c6ff; cursor: pointer; }}
+    .news-date-span {{ font-size: 13px; color: #cbd5e1; white-space: nowrap; }}
+    
+    .notice-card {{ background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 20px; margin-bottom: 15px; }}
+    .notice-badge {{ background-color: #00c6ff; color: #111; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 10px; }}
+    
+    div[data-testid="stMetric"] {{
+        background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 8px;
+    }}
+    
+    /* 장비 가이드 카드 디자인 */
+    .equip-card {{
+        background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 15px; border-radius: 12px; margin-bottom: 20px; min-height: 180px;
+    }}
+    .equip-title {{ font-size: 18px; font-weight: bold; color: #00c6ff; margin-bottom: 8px; }}
+    </style>
+""", unsafe_allow_html=True)
+
+# ==========================================
+# 2. 6개국 로컬라이제이션 매핑 아키텍처 (장비 가이드 번역 정밀 통합)
+# ==========================================
+LANG_DICT = {
+    "한국어 (KO)": "KO", "English (EN)": "EN", "Français (FR)": "FR",       
+    "Italiano (IT)": "IT", "简体中文 (ZH)": "ZH", "日本語 (JA)": "JA"          
+}
+
+LOCALIZED_TEXT = {
+    "KO": {
+        "title": "SKIMO KOREA", "subtitle": "스키등산 정보 포털",
+        "menu": ["대회 홈", "선수 참가 신청", "실시간 리더보드 (LIVE)", "🎿 필수 장비 가이드", "🔐 심판/관리자 패널", "📢 글로벌 공지사항"],
+        "desc": "본 대회는 국제산악스키연맹(ISMF) 규정을 준수하며, field 심판 시스템과 동기화되어 실시간 기록을 전 세계에 생중계합니다.",
+        "video": "📺 경기 종목 안내", "intro_video": "⛷️ 산악스키 소개", "photo": "📸 올림픽 현장 갤러리", "pay": "💳 참가 신청 및 안전 결제",
+        "news_title": "📰 News & Stories (글로벌 최신 소식)", "search_holder": "🔍 검색어를 입력하세요...", "notice": "📢 공지사항", "auth": "👤 로그인/회원가입",
+        "ai_btn": "🤖 AI 요약보기", "ai_modal_title": "⚡ Generative AI 실시간 요약 브리핑",
+        "stats_title": "📊 실시간 경기 텔레메트리 분석 (Telemetry Analytics)", "total_athletes": "총 참가 선수", "racing_athletes": "현재 레이싱 중", "finished_athletes": "완주 성공",
+        "chart_country": "국가별 선수 분포", "chart_category": "세부 종목별 참가 비중", "toast_update": "📢 [실시간 동기화] 배번호 {bib}번 선수의 상태가 {status}로 업데이트되었습니다!",
+        "equip_main_title": "🎿 ISMF 공인 산악스키 필수 5대 장비 안내",
+        "equip_sub": "산악스키(Skimo) 대회는 경량화와 안전성이 승패를 가르는 핵심 요소입니다. 국제연맹(ISMF) 규정에 따른 필수 장비들의 가이드입니다.",
+        "e1_t": "1. 초경량 산악스키 (Skimo Skis)", "e1_d": "오르막길을 빠르게 뛰어 올라가야 하므로 일반 알파인 스키에 비해 상상할 수 없을 정도로 가볍습니다. 남성용 기준 최소 780g, 여성용 700g 선으로 제한되며 탄소 섬유(Carbon)로 제작됩니다.",
+        "e2_t": "2. 투어링 바인딩 (Tech Bindings)", "e2_d": "산악스키 바인딩은 업힐 모드 시 뒷굽이 떨어져 걸어 올라갈 수 있게 설계되었습니다. 다운힐 모드 시에는 뒷굽을 고정합니다. 핀(Pin) 테크 방식을 채택해 무게가 겨우 100g 안팎입니다.",
+        "e3_t": "3. 등반용 클라이밍 스킨 (Climbing Skins)", "e3_d": "스키 플레이트 바닥에 붙이는 모헤어(Mohair) 소재의 전용 스킨입니다. 앞방향으로는 미끄러지지만, 뒷방향으로는 털이 서서 눈을 움켜쥐기 때문에 미끄러지지 않고 수직 오르막을 오를 수 있습니다.",
+        "e4_t": "4. 워크 모드 지원 부츠 (Skimo Boots)", "e4_d": "레버 하나로 발목 관절 구동 범위를 60도 이상 확보하는 '워크 모드'와 활강을 위해 고정하는 '스키 모드'를 전환할 수 있습니다. 카본 재질로 발목 피로도를 최소화합니다.",
+        "e5_t": "5. 탄소섬유 카본 폴 (Carbon Poles)", "e5_d": "상체 반동과 팔 근육을 이용해 업힐 추진력을 내는 도구입니다. 일반 스키 폴보다 길며, 샤프트 전체가 100% High-Modulus 카본으로 되어 있어 매우 가볍고 단단한 강성을 유지합니다."
+    },
+    "EN": {
+        "title": "SKIMO KOREA", "subtitle": "Ski Mountaineering Information Portal",
+        "menu": ["Home", "Athlete Registration", "Live Leaderboard", "🎿 Equipment Guide", "🔐 Judge/Admin Panel", "📢 Global Notice"],
+        "desc": "This tournament complies with ISMF regulations. Scoring and penalties are aggregated in real-time globally via the field web app.",
+        "video": "📺 Skimo Rules Video", "intro_video": "⛷️ What is Skimo?", "photo": "📸 Olympic Action Gallery", "pay": "💳 Register & Secure Pay",
+        "news_title": "📰 News & Stories (Global Latest News)", "search_holder": "🔍 Search information...", "notice": "📢 Notice", "auth": "👤 Login/Register",
+        "ai_btn": "🤖 View AI Summary", "ai_modal_title": "⚡ Generative AI Real-time Briefing",
+        "stats_title": "📊 Live Telemetry Analytics", "total_athletes": "Total Athletes", "racing_athletes": "Racing Now", "finished_athletes": "Finished",
+        "chart_country": "Athletes by Country", "chart_category": "Participation by Category", "toast_update": "📢 [Live Sync] Athlete #{bib} status updated to {status}!",
+        "equip_main_title": "🎿 ISMF Official Ski Mountaineering Mandatory Equipment",
+        "equip_sub": "In Skimo racing, lightweight tech and safety are key. Here is the mandatory gear guide under ISMF rules.",
+        "e1_t": "1. Ultra-Lightweight Skis", "e1_d": "Extremely light for fast uphill climbing. Minimum weight is restricted to 780g for men and 700g for women, made primarily of carbon fiber.",
+        "e2_t": "2. Tech Tour Bindings", "e2_d": "Designed with a free-heel system for walking uphill, and locks down for alpine descents. Tech pin system keeps weight around 100g.",
+        "e3_t": "3. Climbing Skins", "e3_d": "Mohair-based skins attached to ski bases. They glide forward smoothly but grip the snow firmly when moving backwards to allow vertical climbing.",
+        "e4_t": "4. Walk-Mode Boots", "e4_d": "Features a swift lever switching between a 60° ankle rotation 'Walk Mode' and a rigid 'Ski Mode' for high-speed alpine descents.",
+        "e5_t": "5. Carbon Racing Poles", "e5_d": "Provides essential upper-body propulsion during climbs. Slightly longer than alpine poles, built with 100% high-modulus carbon fiber."
+    },
+    "FR": {
+        "title": "SKIMO KOREA", "subtitle": "Portail d'information sur le ski-alpinisme",
+        "menu": ["Accueil", "Inscription des athlètes", "Classement en direct", "🎿 Guide de l'équipement", "🔐 Panneau des juges/admin", "📢 Avis mondial"],
+        "desc": "Ce tournoi est conforme aux règlements de l'ISMF. Les scores et les pénalités sont agrégés en temps réel via l'application web de terrain.",
+        "video": "📺 Vidéo des règlements du Skimo", "intro_video": "⛷️ Qu'est-ce que le Skimo?", "photo": "📸 Galerie d'action olympique", "pay": "💳 S'inscrire et paiement sécurisé",
+        "news_title": "📰 News & Stories (Dernières nouvelles mondiales)", "search_holder": "🔍 Rechercher des informations...", "notice": "📢 Avis", "auth": "👤 Connexion/S'inscrire",
+        "ai_btn": "🤖 Voir le résumé de l'AI", "ai_modal_title": "⚡ Briefing en temps réel de l'IA générative",
+        "stats_title": "📊 Analyse télémétrique en direct", "total_athletes": "Total des athlètes", "racing_athletes": "En course", "finished_athletes": "Terminé",
+        "chart_country": "Athlètes par pays", "chart_category": "Participation par catégorie", "toast_update": "📢 [Sync en direct] Le statut de l'athlète #{bib} a été mis à jour en {status}!",
+        "equip_main_title": "🎿 Équipement obligatoire officiel de ski-alpinisme de l'ISMF",
+        "equip_sub": "En ski-alpinisme, la légèreté et la sécurité sont cruciales. Voici le guide du matériel obligatoire selon l'ISMF.",
+        "e1_t": "1. Skis ultra-légers", "e1_d": "Extrêmement légers pour les montées rapides. Limité à un minimum de 780g pour les hommes et 700g pour les femmes, fabriqués en fibre de carbone.",
+        "e2_t": "2. Fixations Tech", "e2_d": "Conçues avec un système de talon libre pour la montée et verrouillables pour la descente. Le système à broches limite le poids à environ 100g.",
+        "e3_t": "3. Peaux de phoque", "e3_d": "Peaux en mohair fixées sous les skis. Elles glissent vers l'avant mais agrippent la neige vers l'arrière pour permettre les ascensions verticales.",
+        "e4_t": "4. Chaussures avec mode marche", "e4_d": "Dotées d'un levier basculant entre un 'Mode Marche' à 60° de rotation et un 'Mode Ski' rigide pour les descentes alpines rapides.",
+        "e5_t": "5. Bâtons de course en carbone", "e5_d": "Fournissent la propulsion du haut du corps en montée. Plus longs que les bâtons alpins, 100% en fibre de carbone haute rigidité."
+    },
+    "IT": {
+        "title": "SKIMO KOREA", "subtitle": "Portale informativo sullo sci alpinismo",
+        "menu": ["Home", "Iscrizione Atleti", "Classifica in Tempo Reale", "🎿 Guida all'attrezzatura", "🔐 Pannello Giudici/Admin", "📢 Avviso Globale"],
+        "desc": "Questo torneo è conforme ai regolamenti ISMF. I punteggi e le penalità vengono aggregati in tempo reale tramite l'app web sul campo.",
+        "video": "📺 Video delle regole dello Skimo", "intro_video": "⛷️ Cos'è lo Skimo?", "photo": "📸 Galleria d'azione olimpica", "pay": "💳 Registrati e pagamento sicuro",
+        "news_title": "📰 News & Stories (Ultime notizie globali)", "search_holder": "🔍 Cerca informazioni...", "notice": "📢 Avviso", "auth": "👤 Accedi/Registrati",
+        "ai_btn": "🤖 Visualizza il riepilogo dell'IA", "ai_modal_title": "⚡ Briefing in tempo reale dell'IA generativa",
+        "stats_title": "📊 Analisi telemetrica in tempo reale", "total_athletes": "Atleti totali", "racing_athletes": "In gara ora", "finished_athletes": "Finito",
+        "chart_country": "Atleti per paese", "chart_category": "Partecipazione per categoria", "toast_update": "📢 [Sincronizzazione live] Lo stato dell'atleta #{bib} è stato aggiornato a {status}!", 
+        "equip_main_title": "🎿 Attrezzatura obbligatoria ufficiale di sci alpinismo ISMF",
+        "equip_sub": "Nello sci alpinismo, la leggerezza e la sicurezza sono fondamentali. Ecco la guida ai materiali secondo le regole ISMF.",
+        "e1_t": "1. Sci ultraleggeri", "e1_d": "Estremamente leggeri per salite veloci. Peso minimo limitato a 780g per gli uomini e 700g per le donne, realizzati in fibra di carbonio.",
+        "e2_t": "2. Attacchi da alpinismo (Tech)", "e2_d": "Progettati con tallone libero per la camminata in salita e bloccabili per la discesa. Il sistema a perni mantiene il peso intorno ai 100g.",
+        "e3_t": "3. Pelli di foca (Skins)", "e3_d": "Pelli in mohair applicate sotto la soletta. Scivolano in avanti ma fanno presa sulla neve all'indietro per consentire la salita verticale.",
+        "e4_t": "4. Scarponi modalità Walk", "e4_d": "Dotati di una leva rapida che passa dalla modalità 'Walk' (rotazione caviglia >60°) alla modalità 'Ski' rigida per la discesa.",
+        "e5_t": "5. Bastoncini in carbonio", "e5_d": "Forniscono la propulsione essenziale della parte superiore del corpo. Più lunghi dei bastoncini alpini, 100% in carbonio ad alto modulo."
+    },
+    "ZH": {
+        "title": "SKIMO KOREA", "subtitle": "滑雪登山信息门户网站",
+        "menu": ["赛事首页", "运动员报名", "实时排行榜 (LIVE)", "🎿 必备装备指南", "🔐 裁判/管理员控制台", "📢 全球公告"],
+        "desc": "本次赛事遵守国际滑雪登山联盟 (ISMF) 的规定。得分和处罚通过实地网页应用程序在全球范围内实时汇总。",
+        "video": "📺 滑雪登山规则视频", "intro_video": "⛷️ 什么是滑雪登山？", "photo": "📸 奥运现场画廊", "pay": "💳 立即报名与安全支付",
+        "news_title": "📰 News & Stories (全球最新动态)", "search_holder": "🔍 输入搜索内容...", "notice": "📢 公告", "auth": "👤 登录/注册",
+        "ai_btn": "🤖 查看 AI 摘要", "ai_modal_title": "⚡ 生成式 AI 实时简报",
+        "stats_title": "📊 实时比赛遥测数据分析 (Telemetry Analytics)", "total_athletes": "总参赛人数", "racing_athletes": "正在比赛中", "finished_athletes": "成功完赛",
+        "chart_country": "各国选手分布", "chart_category": "各项目报名比例", "toast_update": "📢 [实时同步] 号码牌 {bib} 选手状态已更新为 {status}!",
+        "equip_main_title": "🎿 ISMF 官方滑雪登山强制性装备指南",
+        "equip_sub": "在滑雪登山比赛中，极致轻量化与安全性是取胜关键。以下是符合ISMF规定的必备装备要求。",
+        "e1_t": "1. 超轻量滑雪板", "e1_d": "极轻的重量设计便于快速攀登。男子雪板最低限重780克，女子最低700克，主要采用碳纤维材质打造。",
+        "e2_t": "2. 科技巡航固定器", "e2_d": "专为攀登时后跟分离设计，便于行走；滑降时可锁定后跟。采用插销技术，重量仅在100克左右。",
+        "e3_t": "3. 防滑攀登雪皮", "e3_d": "贴在雪板底部的马海毛材质专用雪皮。向前可平滑向前滑行，向后时绒毛抓雪倒伏防滑，实现垂直攀登。",
+        "e4_t": "4. 步行模式滑雪鞋", "e4_d": "具备快速换挡杆，可在提供60度以上踝关节活动度的“步行模式”与高强度滑降的“滑雪模式”之间自由切换。",
+        "e5_t": "5. 碳纤维竞赛雪杖", "e5_d": "用于在攀登过程中提供上肢推进力。长度略长于普通高山雪杖，由100%高模量碳纤维制成，极轻且坚硬。"
+    },
+    "JA": {
+        "title": "SKIMO KOREA", "subtitle": "山岳スキー情報ポータル",
+        "menu": ["大会ホーム", "選手参加申込", "リアルタイムリーダーボード", "🎿 必須ギアガイド", "🔐 審判/管理者パネル", "📢 グローバルお知らせ"],
+        "desc": "本大会은 国際山岳スキー連盟（ISMF）の規定に準拠しています。スコアやペナルティは、フィールドのウェブアプリを通じてリアルタイムで集計されます。",
+        "video": "📺 山岳スキー規則動画", "intro_video": "⛷️ 山岳スキーとは？", "photo": "📸 オリンピックギャラリー", "pay": "💳 参加申込と安全な決済",
+        "news_title": "📰 News & Stories (最新のグローバルニュース)", "search_holder": "🔍 情報を検索...", "notice": "📢 お知らせ", "auth": "👤 ログイン/会員登録",
+        "ai_btn": "🤖 AI要約を見る", "ai_modal_title": "⚡ 生成AIリアルタイムブリーフィング",
+        "stats_title": "📊 リアルタイム競技テレメトリ分析 (Telemetry Analytics)", "total_athletes": "総参加選手数", "racing_athletes": "現在レース中", "finished_athletes": "完走者数",
+        "chart_country": "国別選手分布", "chart_category": "種目別参加比率", "toast_update": "📢 [ライブ同期] ゼッケン {bib} 番の 選手ステータスが {status} に更新されました！",
+        "equip_main_title": "🎿 ISMF 公認 山岳スキー必須5大ギアガイド",
+        "equip_sub": "山岳スキーレースでは、軽量化と安全性が勝敗を分けます。ISMF規定に基づく必須ギアの解説です。",
+        "e1_t": "1. 超軽量山岳スキー板", "e1_d": "登高で素早く駆け上がるため非常に軽いです。男子は最低780g、女子は700gに制限され、カーボンファイバーで製造されます。",
+        "e2_t": "2. テックビンディング", "e2_d": "登りではヒールが上がり歩行可能で、滑走時はヒールを固定します。ピンテック方式を採用し、重量はわずか100g前後です。",
+        "e3_t": "3. クライミングスキン", "e3_d": "滑走面に貼り付けるモヘア素材의 専用スキンです。前方には滑りますが、後方には毛が立ち雪を掴むため、斜面を垂直に登れます。",
+        "e4_t": "4. ウォークモード対応ブーツ", "e4_d": "レバー一つで足首の可動域を60度以上確保する「ウォークモード」と、滑走用に固定する「スキーモード」を切り替えられる軽量カーボンブーツです。",
+        "e5_t": "5. カーボンレーシングポール", "e5_d": "上半身の推進力を得るための道具です。通常のアルペンポールより長めで、100%高弾性カーボン製のため非常に軽く頑丈です。"
+    }
+}
+
+if "current_lang_code" not in st.session_state:
+    st.session_state.current_lang_code = "KO"
+
+T = LOCALIZED_TEXT.get(st.session_state.current_lang_code, LOCALIZED_TEXT["EN"])
+
+# 로그인/회원가입 모달
+@st.dialog("🔐 SKIMO KOREA 계정 관리")
+def auth_dialog():
+    tab1, tab2 = st.tabs(["👤 로그인", "📝 회원가입"])
+    with tab1:
+        login_id = st.text_input("아이디", key="login_id").strip()
+        login_pw = st.text_input("비밀번호", type="password", key="login_pw").strip()
+        if st.button("로그인 완료", use_container_width=True):
+            current_db = load_user_db()
+            if login_id in current_db and current_db[login_id]["pw"] == login_pw:
+                st.session_state.logged_in_user = login_id
+                st.success(f"🎉 반갑습니다, {login_id}님! 로그인 성공.")
+                time.sleep(0.5)
+                st.rerun()
+            else:
+                st.error("❌ 아이디 또는 비밀번호가 일치하지 않습니다.")
+    with tab2:
+        reg_id = st.text_input("새로운 아이디 생성", key="reg_id").strip()
+        reg_pw = st.text_input("새로운 비밀번호 설정", type="password", key="reg_pw").strip()
+        reg_pw_confirm = st.text_input("비밀번호 확인", type="password", key="reg_pw_confirm").strip()
+        if st.button("회원가입 신청", use_container_width=True):
+            current_db = load_user_db()
+            if not reg_id or not reg_pw:
+                st.warning("⚠️ 아이디와 비밀번호를 모두 입력해주세요.")
+            elif reg_id in current_db:
+                st.error("❌ 이미 존재하는 아이디입니다. 다른 아이디를 사용해주세요.")
+            elif reg_pw != reg_pw_confirm:
+                st.error("❌ 비밀번호 확인이 일치하지 않습니다.")
+            else:
+                current_db[reg_id] = {"pw": reg_pw, "role": "USER"}
+                save_user_db(current_db)
+                st.session_state.user_db = current_db  
+                st.success("🚀 회원가입 성공! 이제 로그인 탭에서 로그인해 주세요.")
+
+# AI 뉴스 요약 모달 창
+@st.dialog("🎯 AI 요약 브리핑")
+def ai_summary_dialog(news_item, lang_code):
+    st.markdown(f"### {T['ai_modal_title']}")
+    st.write("---")
+    current_title = news_item["title"].get(lang_code, news_item["title"]["EN"])
+    st.markdown(f"**📌 대상 뉴스:** {current_title}")
+    with st.spinner("LLM 인퍼런스 엔진 가동 중..."):
+        time.sleep(0.7)
+    summary_content = news_item["ai_summary"].get(lang_code, news_item["ai_summary"]["EN"])
+    st.markdown(summary_content)
+    st.write("---")
+    st.link_button("🔗 원문 뉴스 링크 열기 (ISMF)", news_item["link"], use_container_width=True)
+
+# ==========================================
+# 3. 글로벌 상단 동적 라우터 바
+# ==========================================
+st.markdown('<div class="custom-header-bg">', unsafe_allow_html=True)
+st.markdown('<div class="centered-wrapper">', unsafe_allow_html=True)
+
+c_menu, c_search, c_right = st.columns([3, 4, 5])
+
+SEARCH_KEYWORDS = {
+    0: ["홈", "대회", "소개", "뉴스", "home", "news"],
+    1: ["선수", "참가", "신청", "등록", "접수"],
+    2: ["실시간", "리더", "라이브", "순위", "live", "대시보드"],
+    3: ["장비", "가이드", "스키", "부츠", "폴", "스킨", "바인딩", "equipment"],
+    4: ["심판", "관리자", "패널", "judge"],
+    5: ["공지", "사항", "알림", "notice"]
+}
+
+with c_search:
+    search_query = st.text_input("Search", placeholder=T["search_holder"], label_visibility="collapsed")
+    if search_query:
+        query_clean = search_query.strip().lower()
+        for idx, keywords in SEARCH_KEYWORDS.items():
+            if any(kw in query_clean for kw in keywords):
+                if st.session_state.menu_idx != idx:
+                    st.session_state.menu_idx = idx
+                    st.rerun()
+
+with c_menu:
+    menu_list = list(T["menu"])
+    selected_menu_raw = st.selectbox("Menu", menu_list, index=st.session_state.menu_idx if st.session_state.menu_idx < len(menu_list) else 0, label_visibility="collapsed")
+    menu_index = menu_list.index(selected_menu_raw)
+    if st.session_state.menu_idx != menu_index:
+        st.session_state.menu_idx = menu_index
+        st.rerun()
+
+with c_right:
+    sub_lang, sub_buttons = st.columns([4, 6])
+    with sub_lang:
+        lang_keys = list(LANG_DICT.keys())
+        current_lang_name = [k for k, v in LANG_DICT.items() if v == st.session_state.current_lang_code]
+        default_lang_idx = lang_keys.index(current_lang_name[0]) if current_lang_name else 0
+        
+        selected_lang_name = st.selectbox("Language", lang_keys, index=default_lang_idx, label_visibility="collapsed")
+        new_lang_code = LANG_DICT[selected_lang_name]
+        if st.session_state.current_lang_code != new_lang_code:
+            st.session_state.current_lang_code = new_lang_code
+            st.rerun()
+            
+    with sub_buttons:
+        if st.session_state.logged_in_user is None:
+            if st.button(T["auth"]): auth_dialog()
+        else:
+            if st.button(f"🔓 로그아웃 ({st.session_state.logged_in_user})"):
+                st.session_state.logged_in_user = None
+                st.rerun()
+
+st.markdown('</div></div>', unsafe_allow_html=True)
+
+# 메인 뷰포트 레이아웃
+st.markdown(f'<div class="centered-wrapper"><div class="hero-section"><div class="hero-title">{T["title"]}</div><div class="hero-subtitle">🏔️ {T["subtitle"]}</div></div></div>', unsafe_allow_html=True)
+st.markdown('<div class="content-box">', unsafe_allow_html=True)
+
+# -------------------------------------------------------------------------
+# [라우터 메뉴 분기 제어 체계]
+# -------------------------------------------------------------------------
+if st.session_state.menu_idx == 0:
+    st.markdown("## 🏁 Upcoming Events & Overview")
+    col_text, col_video, col_intro, col_photo = st.columns([3, 3, 3, 3])
+    
+    with col_text:
+        st.markdown("### 📢 Information")
+        st.write(T["desc"])
+        st.markdown("* **Location:** Pyeongchang, KOREA\n* **Sanctioned by:** ISMF\n* **Scale:** 3,000+ Participants")
+        
+    with col_video:
+        st.markdown(f"### {T['video']}")
+        st.video("https://youtu.be/KgyX5OjMTyM")
+
+    with col_intro:
+        st.markdown(f"### {T['intro_video']}")
+        st.video("https://youtu.be/nLjES8kuFRg")
+
+    with col_photo:
+        st.markdown(f"### {T['photo']}")
+        gallery_images = [
+            {"path": "skimo_race_1.jpg", "caption": "❄️ 눈보라를 뚫고 올라가는 레이스"},
+            {"path": "skimo_race_2.jpg", "caption": "🏅 영광의 시상대 현장"},
+            {"path": "skimo_race_3.jpg", "caption": "🎉 박진감 넘치는 다운힐 피니시"}
         ]
-      },
-      EN: {
-        pageTitle: "Essential Gear Guide",
-        items: [
-          {
-            title: "1. Ultralight Skimo Skis",
-            desc: "Designed to be exceptionally lightweight for fast uphill ascents compared to alpine skis. Minimum weight is restricted around 780g for men and 700g for women, crafted with high-grade carbon fiber.",
-            img: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=800&q=80",
-            caption: "Carbon Light Skis"
-          },
-          {
-            title: "2. Tech Bindings",
-            desc: "Skimo bindings feature a free-heel design during uphill mode for climbing. For downhill, the heel locks securely. Using pin-tech design, they weigh around 100g.",
-            img: "https://images.unsplash.com/photo-1565992441121-4367c2967103?auto=format&fit=crop&w=800&q=80",
-            caption: "Tech Binding System"
-          },
-          {
-            title: "3. Climbing Skins",
-            desc: "Mohair skins attached to the bottom of ski bases. They glide smoothly forward while gripping snow backward, enabling steep vertical climbs.",
-            img: "https://images.unsplash.com/photo-1548783307-e83c21a4fa8a?auto=format&fit=crop&w=800&q=80",
-            caption: "Climbing Skins Setup"
-          },
-          {
-            title: "4. Skimo Boots",
-            desc: "Features a single lever to switch between 'Walk Mode' offering over 60 degrees range of motion and locked 'Ski Mode' for downhill control.",
-            img: "https://images.unsplash.com/photo-1517649763962-0c6232662000?auto=format&fit=crop&w=800&q=80",
-            caption: "Ultralight Skimo Boots"
-          },
-          {
-            title: "5. Carbon Fiber Poles",
-            desc: "Poles provide uphill propulsion using upper body strength. Longer than alpine poles, constructed with 100% High-Modulus Carbon for extreme lightness.",
-            img: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
-            caption: "Carbon Fiber Touring Poles"
-          }
-        ]
-      },
-      FR: {
-        pageTitle: "Guide Matériel Essentiel",
-        items: [
-          {
-            title: "1. Skis de Randonnée Ultra-Légers",
-            desc: "Conçus pour être extrêmement légers lors des montées rapides. Limite de poids minimale à 780g (hommes) et 700g (femmes), fabriqués en fibre de carbone.",
-            img: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=800&q=80",
-            caption: "Skis Legers en Carbone"
-          },
-          {
-            title: "2. Fixations Tech",
-            desc: "Libèrent le talon en mode montée et le verrouillent pour la descente. Grâce au système à inserts (pins), elles ne pèsent qu'environ 100g.",
-            img: "https://images.unsplash.com/photo-1565992441121-4367c2967103?auto=format&fit=crop&w=800&q=80",
-            caption: "Système de Fixation Tech"
-          },
-          {
-            title: "3. Peaux de Phoque",
-            desc: "Peaux en mohair fixées sous les skis. Elles glissent vers l'avant et accrochent la neige vers l'arrière pour gravir les pentes raides.",
-            img: "https://images.unsplash.com/photo-1548783307-e83c21a4fa8a?auto=format&fit=crop&w=800&q=80",
-            caption: "Installation Peaux de Phoque"
-          },
-          {
-            title: "4. Chaussures de Skimo",
-            desc: "Basculez entre le 'Mode Marche' (+60° de débattement) et le 'Mode Ski' verrouillé via un seul levier ergonomique.",
-            img: "https://images.unsplash.com/photo-1517649763962-0c6232662000?auto=format&fit=crop&w=800&q=80",
-            caption: "Chaussures Skimo Ultra-Légères"
-          },
-          {
-            title: "5. Bâtons en Carbone",
-            desc: "Offrent une propulsion efficace à la montée. Plus longs que les bâtons alpins, entièrement faits en carbone High-Modulus.",
-            img: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
-            caption: "Bâtons de Randonnée Carbone"
-          }
-        ]
-      },
-      IT: {
-        pageTitle: "Guida Attrezzatura Essenziale",
-        items: [
-          {
-            title: "1. Sci da Sci Alpinismo Ultra-Leggeri",
-            desc: "Progettati per la massima leggerezza nelle salite veloci. Peso minimo di 780g per gli uomini e 700g per le donne, realizzati in fibra di carbonio.",
-            img: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=800&q=80",
-            caption: "Sci Leggeri in Carbonio"
-          },
-          {
-            title: "2. Attacchi Tech",
-            desc: "Sbloccano il tallone per la salita e lo bloccano per la discesa. Utilizzano la tecnologia a pin con un peso ridotto a circa 100g.",
-            img: "https://images.unsplash.com/photo-1565992441121-4367c2967103?auto=format&fit=crop&w=800&q=80",
-            caption: "Sistema Attacchi Tech"
-          },
-          {
-            title: "3. Pelli di Foca",
-            desc: "Pelli in mohair applicate sotto la soletta. Scivolano in avanti e fanno presa sulla neve all'indietro per le salite più ripide.",
-            img: "https://images.unsplash.com/photo-1548783307-e83c21a4fa8a?auto=format&fit=crop&w=800&q=80",
-            caption: "Set Pelli di Foca"
-          },
-          {
-            title: "4. Scarponi da Skimo",
-            desc: "Un'unica leva permette di passare dalla 'Modalità Camminata' (oltre 60° di rotazione) alla 'Modalità Sci' per la discesa.",
-            img: "https://images.unsplash.com/photo-1517649763962-0c6232662000?auto=format&fit=crop&w=800&q=80",
-            caption: "Scarponi Skimo Ultra-Leggeri"
-          },
-          {
-            title: "5. Bastoncini in Carbonio",
-            desc: "Forniscono la spinta necessaria in salita. Più lunghi dei normali bastoncini, costituiti al 100% da carbonio High-Modulus.",
-            img: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
-            caption: "Bastoncini in Carbonio"
-          }
-        ]
-      },
-      ZH: {
-        pageTitle: "必备装备指南",
-        items: [
-          {
-            title: "1. 超轻登山滑雪板 (Skimo Skis)",
-            desc: "为了能够快速冲顶，设计比普通高山滑雪板轻盈得多。男款限制重量至少780克，女款700克，采用全碳纤维打造。",
-            img: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=800&q=80",
-            caption: "Carbon Light Skis"
-          },
-          {
-            title: "2. 巡回固定器 (Tech Bindings)",
-            desc: "攀登模式下脚后跟可分离以便行走，滑降模式下可锁定后跟。采用针式(Pin)技术，重量仅100克左右。",
-            img: "https://images.unsplash.com/photo-1565992441121-4367c2967103?auto=format&fit=crop&w=800&q=80",
-            caption: "Tech Binding System"
-          },
-          {
-            title: "3. 登山雪贴/止滑皮 (Climbing Skins)",
-            desc: "贴在雪板底部的马海毛(Mohair)材质防滑皮。向前滑动顺畅，向后倒退时逆毛抓雪，可顺利进行垂直攀登。",
-            img: "https://images.unsplash.com/photo-1548783307-e83c21a4fa8a?auto=format&fit=crop&w=800&q=80",
-            caption: "Climbing Skins Setup"
-          },
-          {
-            title: "4. 行走模式雪靴 (Skimo Boots)",
-            desc: "通过单个控制杆即可在脚踝活动度达60度以上的'行走模式'和固定下滑的'滑雪模式'之间自由切换。",
-            img: "https://images.unsplash.com/photo-1517649763962-0c6232662000?auto=format&fit=crop&w=800&q=80",
-            caption: "Ultralight Skimo Boots"
-          },
-          {
-            title: "5. 碳纤维雪杖 (Carbon Poles)",
-            desc: "利用上半身反弹力和手臂力量提供上坡推进力。比普通雪杖更长，杖身采用100%高模量碳纤维制作，极致轻量。",
-            img: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
-            caption: "Carbon Fiber Touring Poles"
-          }
-        ]
-      },
-      JA: {
-        pageTitle: " mandatory 必須ギアガイド",
-        items: [
-          {
-            title: "1. 超軽量山岳スキー (Skimo Skis)",
-            desc: "登坂を素早く登るため、一般的なアルペンスキーに比べて非常に軽量です。男性用最低780g、女性用700g程度に制限され、カーボンファイバーで製作されます。",
-            img: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=800&q=80",
-            caption: "Carbon Light Skis"
-          },
-          {
-            title: "2. ツアービンディング (Tech Bindings)",
-            desc: "アッパーモード時はヒールが離れて歩行でき、ダウンヒルモード時はヒールを固定します。ピン(Pin)テック方式を採用し重量はわずか100g前後です。",
-            img: "https://images.unsplash.com/photo-1565992441121-4367c2967103?auto=format&fit=crop&w=800&q=80",
-            caption: "Tech Binding System"
-          },
-          {
-            title: "3. 登坂用クライミングシール (Climbing Skins)",
-            desc: "スキー滑走面につけるモヘア(Mohair)素材の専用シールです。前方向には滑り、後ろ方向には毛が立って雪を掴むため滑らずに登坂可能です。",
-            img: "https://images.unsplash.com/photo-1548783307-e83c21a4fa8a?auto=format&fit=crop&w=800&q=80",
-            caption: "Climbing Skins Setup"
-          },
-          {
-            title: "4. ウォークモード対応ブーツ (Skimo Boots)",
-            desc: "レバー1つで足首の可動域を60度以上確保する「ウォークモード」と滑走用の「スキーモード」を切り替えられます。",
-            img: "https://images.unsplash.com/photo-1517649763962-0c6232662000?auto=format&fit=crop&w=800&q=80",
-            caption: "Ultralight Skimo Boots"
-          },
-          {
-            title: "5. カーボンファイバーポール (Carbon Poles)",
-            desc: "上半身と腕の muscle を利用して登坂の推進力を生み出します。通常のポールより長く、シャフト全体が100% High-Modulus Carbonで極限の軽量性を実現しています。",
-            img: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
-            caption: "Carbon Fiber Touring Poles"
-          }
-        ]
-      }
-    };
+        photo_idx = st.radio("Photo Select", [1, 2, 3], horizontal=True, label_visibility="collapsed")
+        selected_photo = gallery_images[photo_idx - 1]
+        
+        try:
+            st.image(selected_photo["path"], caption=selected_photo["caption"], use_container_width=True)
+        except:
+            import urllib.parse
+            encoded_filename = urllib.parse.quote(selected_photo["path"])
+            github_url = f"https://raw.githubusercontent.com/pyminno12/skimo-website/main/{encoded_filename}"
+            st.image(github_url, caption=selected_photo["caption"], use_container_width=True)
 
-    let currentLang = "KO";
+    st.markdown("<hr style='border-color: rgba(255,255,255,0.15);'>", unsafe_allow_html=True)
+    st.markdown(f"## {T['news_title']}")
+    
+    lang_code = st.session_state.current_lang_code
+    for item in st.session_state.home_news_domain:
+        localized_news_title = item["title"].get(lang_code, item["title"]["EN"])
+        c_news_title, c_news_btn = st.columns([8, 2])
+        with c_news_title:
+            st.markdown(f"""
+                <div class="news-flex-container">
+                    <span class="news-title-link">📌 {localized_news_title}</span>
+                    <span class="news-date-span">📅 {item['date']}</span>
+                </div>
+            """, unsafe_allow_html=True)
+        with c_news_btn:
+            if st.button(T["ai_btn"], key=f"btn_ai_{item['id']}", use_container_width=True):
+                ai_summary_dialog(item, lang_code)
 
-    function renderUI() {
-      const langData = LOCALIZED_TEXT[currentLang] || LOCALIZED_TEXT["KO"];
-      
-      // 타이틀 업데이트
-      document.getElementById("page-title").innerText = langData.pageTitle;
+elif st.session_state.menu_idx == 1:
+    st.markdown(f"## {T['menu'][1]}")
+    with st.form("reg_form"):
+        p_name = st.text_input("Athlete Name")
+        p_nation = st.text_input("Country/Team").upper()
+        p_event = st.selectbox("Category", ["Sprint", "Individual", "Vertical"])
+        if st.form_submit_button(T["pay"]) and p_name:
+            next_bib = str(100 + len(st.session_state.athletes_domain) + 1)
+            st.session_state.athletes_domain[next_bib] = {"Name": p_name, "Team": p_nation, "Category": p_event, "Status": "RACING", "CP1": "--:--:--", "CP2": "--:--:--", "Penalty_Sec": 0, "Final_Record": "--:--:--"}
+            st.success(f"선수 등록 완료! 배정 배번호: [{next_bib}]")
 
-      // 카드 리스트 동적 렌더링
-      const gridContainer = document.getElementById("equipment-grid");
-      gridContainer.innerHTML = "";
+elif st.session_state.menu_idx == 2:
+    st.markdown(f"## {T['menu'][2]}")
+    data_list = [{"BIB": b, **i} for b, i in st.session_state.athletes_domain.items()]
+    df = pd.DataFrame(data_list)
+    
+    st.markdown(f"### {T['stats_title']}")
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric(T["total_athletes"], f"{len(df)}명")
+    m2.metric(T["racing_athletes"], f"{len(df[df['Status'] == 'RACING'])}명", delta=f"+{len(df[df['Status'] == 'RACING'])} LIVE")
+    m3.metric(T["finished_athletes"], f"{len(df[df['Status'] == 'FINISHED'])}명")
+    m4.metric("DNF / DSQ", f"{len(df[df['Status'] == 'DNF'])}명")
+    
+    c_chart1, c_chart2 = st.columns(2)
+    with c_chart1:
+        country_counts = df["Team"].value_counts().reset_index()
+        country_counts.columns = ["Country", "Count"]
+        fig_country = px.bar(country_counts, x="Country", y="Count", title=T["chart_country"], color="Count", color_continuous_scale="Blugrn")
+        fig_country.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="white")
+        st.plotly_chart(fig_country, use_container_width=True)
+    with c_chart2:
+        cat_counts = df["Category"].value_counts().reset_index()
+        cat_counts.columns = ["Category", "Count"]
+        fig_cat = px.pie(cat_counts, values="Count", names="Category", title=T["chart_category"], hole=0.4)
+        fig_cat.update_layout(paper_bgcolor="rgba(0,0,0,0)", font_color="white")
+        st.plotly_chart(fig_cat, use_container_width=True)
+        
+    st.markdown("---")
+    df_display = df[["BIB", "Name", "Team", "Category", "Status", "CP1", "CP2", "Penalty_Sec", "Final_Record"]]
+    st.dataframe(df_display.set_index("BIB"), use_container_width=True)
 
-      langData.items.forEach(item => {
-        const cardHTML = `
-          <div class="card">
-            <div class="card-content">
-              <div class="card-title">${item.title}</div>
-              <div class="card-desc">${item.desc}</div>
-            </div>
-            <div class="card-img-wrapper">
-              <img class="card-img" src="${item.img}" alt="${item.title}" loading="lazy" />
-              <div class="img-caption">${item.caption}</div>
-            </div>
-          </div>
-        `;
-        gridContainer.insertAdjacentHTML("beforeend", cardHTML);
-      });
-    }
+# -------------------------------------------------------------------------
+# [🎿 필수 장비 가이드 - 6개국 언어 실시간 연동 완료]
+# -------------------------------------------------------------------------
+elif st.session_state.menu_idx == 3:
+    st.markdown(f"## {T['equip_main_title']}")
+    st.write(T['equip_sub'])
+    st.write("---")
+    
+    # 5대 장비를 깔끔하게 3열 / 2열 그리드로 나누어 시각화
+    row1_c1, row1_c2, row1_c3 = st.columns(3)
+    row2_c1, row2_c2 = st.columns(2)
+    
+    with row1_c1:
+        st.markdown(f"""
+        <div class="equip-card">
+            <div class="equip-title">{T['e1_t']}</div>
+            <p style='font-size:14px; color:#cbd5e1;'>{T['e1_d']}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.image("https://images.unsplash.com/photo-1605548230624-8d2d0419c517?auto=format&fit=crop&w=500&q=80", caption="Carbon Light Skis", use_container_width=True)
+        
+    with row1_c2:
+        st.markdown(f"""
+        <div class="equip-card">
+            <div class="equip-title">{T['e2_t']}</div>
+            <p style='font-size:14px; color:#cbd5e1;'>{T['e2_d']}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.image("https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=500&q=80", caption="Tech Binding System", use_container_width=True)
+        
+    with row1_c3:
+        st.markdown(f"""
+        <div class="equip-card">
+            <div class="equip-title">{T['e3_t']}</div>
+            <p style='font-size:14px; color:#cbd5e1;'>{T['e3_d']}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.image("https://images.unsplash.com/photo-1614531341773-3bef8ca0da3b?auto=format&fit=crop&w=500&q=80", caption="Climbing Skins Setup", use_container_width=True)
 
-    function changeLanguage(lang) {
-      currentLang = lang;
-      renderUI();
-    }
+    with row2_c1:
+        st.markdown(f"""
+        <div class="equip-card">
+            <div class="equip-title">{T['e4_t']}</div>
+            <p style='font-size:14px; color:#cbd5e1;'>{T['e4_d']}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.image("https://images.unsplash.com/photo-1518098268026-4e43a1a009de?auto=format&fit=crop&w=500&q=80", caption="Lightweight Boots", use_container_width=True)
+        
+    with row2_c2:
+        st.markdown(f"""
+        <div class="equip-card">
+            <div class="equip-title">{T['e5_t']}</div>
+            <p style='font-size:14px; color:#cbd5e1;'>{T['e5_d']}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.image("https://images.unsplash.com/photo-1482867996988-2faec3cbb4f9?auto=format&fit=crop&w=500&q=80", caption="Racing Carbon Poles", use_container_width=True)
 
-    // 초기 실행
-    renderUI();
-  </script>
-</body>
-</html>
+elif st.session_state.menu_idx == 4:
+    st.markdown(f"## {T['menu'][4]}")
+    if st.session_state.logged_in_user is None:
+        st.warning("⚠️ 권한 경고: 심판 계정으로 로그인이 필요합니다.")
+    else:
+        current_db = load_user_db()
+        user_role = current_db.get(st.session_state.logged_in_user, {}).get("role", "USER")
+        if user_role not in ["ADMIN", "JUDGE"]:
+            st.error("🚫 접근 거부: 심판/관리자 패널을 조작할 권한이 없습니다.")
+        else:
+            bib_list = list(st.session_state.athletes_domain.keys())
+            selected_bib = st.selectbox("업데이트할 BIB 선택", bib_list)
+            new_status = st.selectbox("상태 값 변경", ["RACING", "FINISHED", "DNF", "DSQ"])
+            if st.button("🚨 데이터 필드 실시간 동기화"):
+                st.session_state.athletes_domain[selected_bib]["Status"] = new_status
+                toast_msg = T["toast_update"].format(bib=selected_bib, status=new_status)
+                st.toast(toast_msg, icon="🏂")
+                st.success(f"배번호 {selected_bib}번 선수의 경기 상태가 {new_status}로 변경되었습니다.")
+                time.sleep(1.0)
+                st.rerun()
+
+elif st.session_state.menu_idx == 5:
+    st.markdown(f"## {T['menu'][5]}")
+    lang_code = st.session_state.current_lang_code
+    for item in st.session_state.notice_domain:
+        title_text = item["title"].get(lang_code, item["title"]["EN"])
+        content_text = item["content"].get(lang_code, item["content"]["EN"])
+        st.markdown(f'<div class="notice-card"><div><span class="notice-badge">{item["category"]}</span><span>📅 {item["date"]}</span></div><div style="font-size:18px; font-weight:600; margin:10px 0;">{title_text}</div><div>{content_text}</div></div>', unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
