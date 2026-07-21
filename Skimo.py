@@ -10,13 +10,13 @@ import json
 # ==========================================
 st.set_page_config(page_title="SKIMO KOREA", page_icon="🏔️", layout="wide")
 
-# 배경 이미지 풀 (장비 가이드용 배경 이미지 추가 포함)
+# 배경 이미지 풀
 BG_IMAGES = [
     "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80",  
     "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=1800&q=80",  
     "https://images.unsplash.com/photo-1614531341773-3bef8ca0da3b?auto=format&fit=crop&w=1800&q=80",  
     "https://images.unsplash.com/photo-1482867996988-2faec3cbb4f9?auto=format&fit=crop&w=1800&q=80",
-    "https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=1800&q=80", # 장비 가이드용 배경
+    "https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=1800&q=80",
     "https://images.unsplash.com/photo-1518098268026-4e43a1a009de?auto=format&fit=crop&w=1800&q=80"   
 ]
 
@@ -139,7 +139,7 @@ st.markdown(f"""
     /* 장비 가이드 카드 디자인 */
     .equip-card {{
         background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 15px; border-radius: 12px; margin-bottom: 20px; min-height: 180px;
+        padding: 15px; border-radius: 12px; margin-bottom: 15px; min-height: 170px;
     }}
     .equip-title {{ font-size: 18px; font-weight: bold; color: #00c6ff; margin-bottom: 8px; }}
     </style>
@@ -251,7 +251,7 @@ LOCALIZED_TEXT = {
         "equip_main_title": "🎿 ISMF 公認 山岳スキー必須5大ギアガイド",
         "equip_sub": "山岳スキーレースでは、軽量化と安全性が勝敗を分けます。ISMF規定に基づく必須ギアの解説です。",
         "e1_t": "1. 超軽量山岳スキー板", "e1_d": "登高で素早く駆け上がるため非常に軽いです。男子は最低780g、女子は700gに制限され、カーボンファイバーで製造されます。",
-        "e2_t": "2. テックビンディング", "e2_d": "登りではヒールが上がり歩行可能で、滑走時はヒールを固定します。ピンテック方式を採用し、重量はわずか100g前後です。",
+        "e2_t": "2. テックビンディング", "e2_d": "登りではヒール가上がり歩行可能で、滑走時はヒールを固定します。ピンテック方式を採用し、重量はわずか100g前後です。",
         "e3_t": "3. クライミングスキン", "e3_d": "滑走面に貼り付けるモヘア素材의 専用スキンです。前方には滑りますが、後方には毛が立ち雪を掴むため、斜面を垂直に登れます。",
         "e4_t": "4. ウォークモード対応ブーツ", "e4_d": "レバー一つで足首の可動域を60度以上確保する「ウォークモード」と、滑走用に固定する「スキーモード」を切り替えられる軽量カーボンブーツです。",
         "e5_t": "5. カーボンレーシングポール", "e5_d": "上半身の推進力を得るための道具です。通常のアルペンポールより長めで、100%高弾性カーボン製のため非常に軽く頑丈です。"
@@ -471,14 +471,13 @@ elif st.session_state.menu_idx == 2:
     st.dataframe(df_display.set_index("BIB"), use_container_width=True)
 
 # -------------------------------------------------------------------------
-# [🎿 필수 장비 가이드 - 6개국 언어 실시간 연동 완료]
+# [🎿 필수 장비 가이드 - 정확한 장비 전용 고화질 사진 반영 완료]
 # -------------------------------------------------------------------------
 elif st.session_state.menu_idx == 3:
     st.markdown(f"## {T['equip_main_title']}")
     st.write(T['equip_sub'])
     st.write("---")
     
-    # 5대 장비를 3열 / 2열 그리드로 나누어 시각화
     row1_c1, row1_c2, row1_c3 = st.columns(3)
     row2_c1, row2_c2 = st.columns(2)
     
@@ -489,7 +488,7 @@ elif st.session_state.menu_idx == 3:
             <p style='font-size:14px; color:#cbd5e1;'>{T['e1_d']}</p>
         </div>
         """, unsafe_allow_html=True)
-        st.image("https://images.unsplash.com/photo-1605548230624-8d2d0419c517?auto=format&fit=crop&w=500&q=80", caption="Carbon Light Skis", use_container_width=True)
+        st.image("https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=600&q=80", caption="Skimo Lightweight Skis", use_container_width=True)
         
     with row1_c2:
         st.markdown(f"""
@@ -498,7 +497,7 @@ elif st.session_state.menu_idx == 3:
             <p style='font-size:14px; color:#cbd5e1;'>{T['e2_d']}</p>
         </div>
         """, unsafe_allow_html=True)
-        st.image("https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=500&q=80", caption="Tech Binding System", use_container_width=True)
+        st.image("https://images.unsplash.com/photo-1565992441121-4367c2967103?auto=format&fit=crop&w=600&q=80", caption="Tech Binding System", use_container_width=True)
         
     with row1_c3:
         st.markdown(f"""
@@ -507,7 +506,7 @@ elif st.session_state.menu_idx == 3:
             <p style='font-size:14px; color:#cbd5e1;'>{T['e3_d']}</p>
         </div>
         """, unsafe_allow_html=True)
-        st.image("https://images.unsplash.com/photo-1614531341773-3bef8ca0da3b?auto=format&fit=crop&w=500&q=80", caption="Climbing Skins Setup", use_container_width=True)
+        st.image("https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=600&q=80", caption="Climbing Skins Setup", use_container_width=True)
 
     with row2_c1:
         st.markdown(f"""
@@ -516,7 +515,7 @@ elif st.session_state.menu_idx == 3:
             <p style='font-size:14px; color:#cbd5e1;'>{T['e4_d']}</p>
         </div>
         """, unsafe_allow_html=True)
-        st.image("https://images.unsplash.com/photo-1482867996988-2faec3cbb4f9?auto=format&fit=crop&w=500&q=80", caption="Walk-Mode Skimo Boots", use_container_width=True)
+        st.image("https://images.unsplash.com/photo-1548777123-e216912df7d8?auto=format&fit=crop&w=600&q=80", caption="Walk-Mode Skimo Boots", use_container_width=True)
 
     with row2_c2:
         st.markdown(f"""
@@ -525,7 +524,7 @@ elif st.session_state.menu_idx == 3:
             <p style='font-size:14px; color:#cbd5e1;'>{T['e5_d']}</p>
         </div>
         """, unsafe_allow_html=True)
-        st.image("https://images.unsplash.com/photo-1518098268026-4e43a1a009de?auto=format&fit=crop&w=500&q=80", caption="Carbon Racing Poles", use_container_width=True)
+        st.image("https://images.unsplash.com/photo-1518098268026-4e43a1a009de?auto=format&fit=crop&w=600&q=80", caption="Carbon Racing Poles", use_container_width=True)
 
 # -------------------------------------------------------------------------
 # [🔐 심판 / 관리자 패널]
@@ -536,7 +535,6 @@ elif st.session_state.menu_idx == 4:
     current_user = st.session_state.logged_in_user
     current_db = load_user_db()
     
-    # 심판/관리자 권한 검증
     if not current_user or current_db.get(current_user, {}).get("role") not in ["ADMIN", "JUDGE"]:
         st.warning("⚠️ 이 메뉴는 심판(JUDGE) 및 관리자(ADMIN) 권한이 있는 계정만 접근할 수 있습니다.")
         st.info("테스트용 심판 계정: `skimo` / `skimo123`  |  관리자 계정: `admin` / `1234`로 상단에서 로그인하세요.")
