@@ -1,0 +1,36 @@
+name: Daily Skimo Notice Updater
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # 매일 한국 시간 오전 9시 자동 실행
+  workflow_dispatch: # 수동 실행 버튼 활성화
+
+jobs:
+  update-notice:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          pip install google-generativeai
+
+      - name: Run Notice Updater
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python update_notices.py
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add notice_data.json
+          git commit -m "Auto-update daily skimo notice [skip ci]" || exit 0
+          git push
