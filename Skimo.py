@@ -568,14 +568,21 @@ elif st.session_state.menu_idx == 4:
                 st.success(f"✅ 배번호 [{target_bib}] {athlete_data['Name']} 선수의 기록이 업데이트되었습니다.")
 
 # -------------------------------------------------------------------------
-# [📢 글로벌 공지사항]
+# [📢 글로벌 공지사항 - notice_data.json 자동 로드]
 # -------------------------------------------------------------------------
 elif st.session_state.menu_idx == 5:
     st.markdown(f"## {T['menu'][5]}")
     st.markdown("---")
     
+    # notice_data.json 파일 읽기
+    try:
+        with open("notice_data.json", "r", encoding="utf-8") as f:
+            notices = json.load(f)
+    except FileNotFoundError:
+        notices = st.session_state.notice_domain
+
     lang_code = st.session_state.current_lang_code
-    for notice in st.session_state.notice_domain:
+    for notice in notices:
         n_title = notice["title"].get(lang_code, notice["title"]["EN"])
         n_content = notice["content"].get(lang_code, notice["content"]["EN"])
         
