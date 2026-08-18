@@ -4,6 +4,9 @@ import plotly.express as px
 from datetime import datetime
 import time
 import json
+import re
+import secrets
+import string
 
 # ==========================================
 # 1. 페이지 설정 및 글로벌 상태 정의
@@ -28,14 +31,47 @@ if "logged_in_user" not in st.session_state:
 # [브라우저 쿠키/로컬 스토리지 대용 구조]
 DB_FILE = "user_database.json"
 
+def ensure_user_meta_fields(db_data: dict) -> dict:
+    """
+    레거시 계정 데이터(이전 버전에서 생성된 계정)에 신규 필드를 보정합니다.
+    - status: ACTIVE / SUSPENDED
+    - pw_last_changed: 마지막 비밀번호 변경 시각 (ISO 포맷)
+    - pw_history: 비밀번호 변경 이력 로그
+    """
+    changed = False
+    now_iso = datetime.now().isoformat(timespec="seconds")
+    for uid, info in db_data.items():
+        if "status" not in info:
+            info["status"] = "ACTIVE"
+            changed = True
+        if "pw_last_changed" not in info:
+            info["pw_last_changed"] = now_iso
+            changed = True
+        if "pw_history" not in info:
+            info["pw_history"] = [{"timestamp": now_iso, "changed_by": "시스템(자동 보정)"}]
+            changed = True
+    if changed:
+        save_user_db(db_data)
+    return db_data
+
 def load_user_db():
     try:
         with open(DB_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            db_data = json.load(f)
+        return ensure_user_meta_fields(db_data)
     except FileNotFoundError:
+        now_iso = datetime.now().isoformat(timespec="seconds")
         initial_db = {
-            "admin": {"pw": "1234", "role": "ADMIN"},
-            "skimo": {"pw": "skimo123", "role": "JUDGE"}
+            "admin": {
+                "pw": "1234", "role": "ADMIN", "status": "ACTIVE",
+                "pw_last_changed": now_iso,
+                "pw_history": [{"timestamp": now_iso, "changed_by": "시스템(초기 생성)"}]
+            },
+            "skimo": {
+                "pw": "skimo123", "role": "JUDGE", "status": "ACTIVE",
+                "pw_last_changed": now_iso,
+                "pw_history": [{"timestamp": now_iso, "changed_by": "시스템(초기 생성)"}]
+            }
         }
         save_user_db(initial_db)
         return initial_db
@@ -43,6 +79,66 @@ def load_user_db():
 def save_user_db(db_data):
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(db_data, f, ensure_ascii=False, indent=4)
+
+# ==========================================
+# [신규 추가] 비밀번호 보안 정책
+# ==========================================
+PASSWORD_POLICY_HINT = "🔐 비밀번호는 최소 8자 이상이며, 영문/숫자/특수문자를 각각 1개 이상 포함해야 합니다."
+
+def validate_password_policy(pw: str):
+    """
+    비밀번호 정책 검증
+    - 최소 8자 이상
+    - 영문자 최소 1개
+    - 숫자 최소 1개
+    - 특수문자 최소 1개
+    반환값: (통과여부: bool, 실패 사유 메시지: str)
+    """
+    if len(pw) < 8:
+        return False, "비밀번호는 최소 8자리 이상이어야 합니다."
+    if not re.search(r'[A-Za-z]', pw):
+        return False, "비밀번호에 영문자가 최소 1개 포함되어야 합니다."
+    if not re.search(r'[0-9]', pw):
+        return False, "비밀번호에 숫자가 최소 1개 포함되어야 합니다."
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>_\-+=~`\[\];\'/\\]', pw):
+        return False, "비밀번호에 특수문자가 최소 1개 포함되어야 합니다. (예: ! @ # $ % 등)"
+    return True, ""
+
+def generate_temp_password(length: int = 10) -> str:
+    """정책을 만족하는 임시 비밀번호를 자동 생성합니다."""
+    letters = string.ascii_letters
+    digits = string.digits
+    specials = "!@#$%^&*"
+    # 각 카테고리 최소 1개씩 보장 후 나머지는 랜덤으로 채움
+    base = [secrets.choice(letters), secrets.choice(digits), secrets.choice(specials)]
+    remaining_pool = letters + digits + specials
+    base += [secrets.choice(remaining_pool) for _ in range(max(length - 3, 0))]
+    secrets.SystemRandom().shuffle(base)
+    return "".join(base)
+
+# ==========================================
+# [신규 추가] 비밀번호 만료 정책 & 변경 이력 로깅
+# ==========================================
+PASSWORD_EXPIRY_DAYS = 90  # 비밀번호 만료 주기 (일)
+
+def is_password_expired(user_record: dict) -> bool:
+    """마지막 비밀번호 변경일로부터 PASSWORD_EXPIRY_DAYS가 지났는지 확인합니다."""
+    last_changed_str = user_record.get("pw_last_changed")
+    if not last_changed_str:
+        return False
+    try:
+        last_changed = datetime.fromisoformat(last_changed_str)
+    except ValueError:
+        return False
+    return (datetime.now() - last_changed).days >= PASSWORD_EXPIRY_DAYS
+
+def log_password_change(db_data: dict, user_id: str, changed_by: str):
+    """비밀번호 변경 이력을 기록하고 마지막 변경일을 갱신합니다."""
+    now_iso = datetime.now().isoformat(timespec="seconds")
+    db_data[user_id]["pw_last_changed"] = now_iso
+    db_data[user_id].setdefault("pw_history", []).append({"timestamp": now_iso, "changed_by": changed_by})
+    # 이력은 최근 20건까지만 보관 (파일 비대화 방지)
+    db_data[user_id]["pw_history"] = db_data[user_id]["pw_history"][-20:]
 
 st.session_state.user_db = load_user_db()
 
@@ -169,7 +265,8 @@ LOCALIZED_TEXT = {
         "e2_t": "2. 투어링 바인딩 (Tech Bindings)", "e2_d": "산악스키 바인딩은 업힐 모드 시 뒷굽이 떨어져 걸어 올라갈 수 있게 설계되었습니다. 다운힐 모드 시에는 뒷굽을 고정합니다. 핀(Pin) 테크 방식을 채택해 무게가 겨우 100g 안팎입니다.",
         "e3_t": "3. 등반용 클라이밍 스킨 (Climbing Skins)", "e3_d": "스키 플레이트 바닥에 붙이는 모헤어(Mohair) 소재의 전용 스킨입니다. 앞방향으로는 미끄러지지만, 뒷방향으로는 털이 서서 눈을 움켜쥐기 때문에 미끄러지지 않고 수직 오르막을 오를 수 있습니다.",
         "e4_t": "4. 워크 모드 지원 부츠 (Skimo Boots)", "e4_d": "레버 하나로 발목 관절 구동 범위를 60도 이상 확보하는 '워크 모드'와 활강을 위해 고정하는 '스키 모드'를 전환할 수 있습니다. 카본 재질로 발목 피로도를 최소화합니다.",
-        "e5_t": "5. 탄소섬유 카본 폴 (Carbon Poles)", "e5_d": "상체 반동과 팔 근육을 이용해 업힐 추진력을 내는 도구입니다. 일반 스키 폴보다 길며, 샤프트 전체가 100% High-Modulus 카본으로 되어 있어 매우 가볍고 단단한 강성을 유지합니다."
+        "e5_t": "5. 탄소섬유 카본 폴 (Carbon Poles)", "e5_d": "상체 반동과 팔 근육을 이용해 업힐 추진력을 내는 도구입니다. 일반 스키 폴보다 길며, 샤프트 전체가 100% High-Modulus 카본으로 되어 있어 매우 가볍고 단단한 강성을 유지합니다.",
+        "change_pw_btn": "🔒 비밀번호 변경"
     },
     "EN": {
         "title": "SKIMO KOREA", "subtitle": "Ski Mountaineering Information Portal",
@@ -186,7 +283,8 @@ LOCALIZED_TEXT = {
         "e2_t": "2. Tech Tour Bindings", "e2_d": "Designed with a free-heel system for walking uphill, and locks down for alpine descents. Tech pin system keeps weight around 100g.",
         "e3_t": "3. Climbing Skins", "e3_d": "Mohair-based skins attached to ski bases. They glide forward smoothly but grip the snow firmly when moving backwards to allow vertical climbing.",
         "e4_t": "4. Walk-Mode Boots", "e4_d": "Features a swift lever switching between a 60° ankle rotation 'Walk Mode' and a rigid 'Ski Mode' for high-speed alpine descents.",
-        "e5_t": "5. Carbon Racing Poles", "e5_d": "Provides essential upper-body propulsion during climbs. Slightly longer than alpine poles, built with 100% high-modulus carbon fiber."
+        "e5_t": "5. Carbon Racing Poles", "e5_d": "Provides essential upper-body propulsion during climbs. Slightly longer than alpine poles, built with 100% high-modulus carbon fiber.",
+        "change_pw_btn": "🔒 Change Password"
     },
     "FR": {
         "title": "SKIMO KOREA", "subtitle": "Portail d'information sur le ski-alpinisme",
@@ -203,7 +301,8 @@ LOCALIZED_TEXT = {
         "e2_t": "2. Fixations Tech", "e2_d": "Conçues avec un système de talon libre pour la montée et verrouillables pour la descente. Le système à broches limite le poids à environ 100g.",
         "e3_t": "3. Peaux de phoque", "e3_d": "Peaux en mohair fixées sous les skis. Elles glissent vers l'avant mais agrippent la neige vers l'arrière pour permettre les ascensions verticales.",
         "e4_t": "4. Chaussures avec mode marche", "e4_d": "Dotées d'un levier basculant entre un 'Mode Marche' à 60° de rotation et un 'Mode Ski' rigide pour les descentes alpines rapides.",
-        "e5_t": "5. Bâtons de course en carbone", "e5_d": "Fournissent la propulsion du haut du corps en montée. Plus longs que les bâtons alpins, 100% en fibre de carbone haute rigidité."
+        "e5_t": "5. Bâtons de course en carbone", "e5_d": "Fournissent la propulsion du haut du corps en montée. Plus longs que les bâtons alpins, 100% en fibre de carbone haute rigidité.",
+        "change_pw_btn": "🔒 Changer le mot de passe"
     },
     "IT": {
         "title": "SKIMO KOREA", "subtitle": "Portale informativo sullo sci alpinismo",
@@ -220,7 +319,8 @@ LOCALIZED_TEXT = {
         "e2_t": "2. Attacchi da alpinismo (Tech)", "e2_d": "Progettati con tallone libero per la camminata in salita e bloccabili per la discesa. Il sistema a perni mantiene il peso intorno ai 100g.",
         "e3_t": "3. Pelli di foca (Skins)", "e3_d": "Pelli in mohair applicate sotto la soletta. Scivolano in avanti ma fanno presa sulla neve all'indietro per consentire la salita verticale.",
         "e4_t": "4. Scarponi modalità Walk", "e4_d": "Dotati di una leva rapida che passa dalla modalità 'Walk' (rotazione caviglia >60°) alla modalità 'Ski' rigida per la discesa.",
-        "e5_t": "5. Bastoncini in carbonio", "e5_d": "Forniscono la propulsione essenziale della parte superiore del corpo. Più lunghi dei bastoncini alpini, 100% in carbonio ad alto modulo."
+        "e5_t": "5. Bastoncini in carbonio", "e5_d": "Forniscono la propulsione essenziale della parte superiore del corpo. Più lunghi dei bastoncini alpini, 100% in carbonio ad alto modulo.",
+        "change_pw_btn": "🔒 Cambia password"
     },
     "ZH": {
         "title": "SKIMO KOREA", "subtitle": "滑雪登山信息门户网站",
@@ -237,7 +337,8 @@ LOCALIZED_TEXT = {
         "e2_t": "2. 科技巡航固定器", "e2_d": "专为攀登时后跟分离设计，便于行走；滑降时可锁定后跟。采用插销技术，重量仅在100克左右。",
         "e3_t": "3. 防滑攀登雪皮", "e3_d": "贴在雪板底部的马海毛材质专用雪皮。向前可平滑向前滑行，向后时绒毛抓雪倒伏防滑，实现垂直攀登。",
         "e4_t": "4. 步行模式滑雪鞋", "e4_d": "具备快速换挡杆，可在提供60度以上踝关节活动度的“步行模式”与高强度滑降的“滑雪模式”之间自由切换。",
-        "e5_t": "5. 碳纤维竞赛雪杖", "e5_d": "用于在攀登过程中提供上肢推进力。长度略长于普通高山雪杖，由100%高模量碳纤维制成，极轻且坚硬。"
+        "e5_t": "5. 碳纤维竞赛雪杖", "e5_d": "用于在攀登过程中提供上肢推进力。长度略长于普通高山雪杖，由100%高模量碳纤维制成，极轻且坚硬。",
+        "change_pw_btn": "🔒 修改密码"
     },
     "JA": {
         "title": "SKIMO KOREA", "subtitle": "山岳スキー情報ポータル",
@@ -254,7 +355,8 @@ LOCALIZED_TEXT = {
         "e2_t": "2. テックビンディング", "e2_d": "登りではヒール가上がり歩行可能で、滑走時はヒールを固定します。ピンテック方式を採用し、重量はわずか100g前後です。",
         "e3_t": "3. クライミングスキン", "e3_d": "滑走面に貼り付けるモヘア素材의 専用スキンです。前方には滑りますが、後方には毛が立ち雪を掴むため、斜面を垂直に登れます。",
         "e4_t": "4. ウォークモード対応ブーツ", "e4_d": "レバー一つで足首の可動域を60度以上確保する「ウォークモード」と、滑走用に固定する「スキーモード」を切り替えられる軽量カーボンブーツです。",
-        "e5_t": "5. カーボンレーシングポール", "e5_d": "上半身の推進力を得るための道具です。通常のアルペンポールより長めで、100%高弾性カーボン製のため非常に軽く頑丈です。"
+        "e5_t": "5. カーボンレーシングポール", "e5_d": "上半身の推進力を得るための道具です。通常のアルペンポールより長めで、100%高弾性カーボン製のため非常に軽く頑丈です。",
+        "change_pw_btn": "🔒 パスワード変更"
     }
 }
 
@@ -273,16 +375,21 @@ def auth_dialog():
         if st.button("로그인 완료", use_container_width=True):
             current_db = load_user_db()
             if login_id in current_db and current_db[login_id]["pw"] == login_pw:
-                st.session_state.logged_in_user = login_id
-                st.success(f"🎉 반갑습니다, {login_id}님! 로그인 성공.")
-                time.sleep(0.5)
-                st.rerun()
+                if current_db[login_id].get("status", "ACTIVE") == "SUSPENDED":
+                    st.error("🚫 이 계정은 관리자에 의해 정지된 상태입니다. 관리자에게 문의해주세요.")
+                else:
+                    st.session_state.logged_in_user = login_id
+                    st.session_state.force_pw_change = is_password_expired(current_db[login_id])
+                    st.success(f"🎉 반갑습니다, {login_id}님! 로그인 성공.")
+                    time.sleep(0.5)
+                    st.rerun()
             else:
                 st.error("❌ 아이디 또는 비밀번호가 일치하지 않습니다.")
     with tab2:
         reg_id = st.text_input("새로운 아이디 생성", key="reg_id").strip()
         reg_pw = st.text_input("새로운 비밀번호 설정", type="password", key="reg_pw").strip()
         reg_pw_confirm = st.text_input("비밀번호 확인", type="password", key="reg_pw_confirm").strip()
+        st.caption(PASSWORD_POLICY_HINT)
         if st.button("회원가입 신청", use_container_width=True):
             current_db = load_user_db()
             if not reg_id or not reg_pw:
@@ -292,10 +399,62 @@ def auth_dialog():
             elif reg_pw != reg_pw_confirm:
                 st.error("❌ 비밀번호 확인이 일치하지 않습니다.")
             else:
-                current_db[reg_id] = {"pw": reg_pw, "role": "USER"}
+                is_valid, policy_msg = validate_password_policy(reg_pw)
+                if not is_valid:
+                    st.error(f"❌ {policy_msg}")
+                else:
+                    now_iso = datetime.now().isoformat(timespec="seconds")
+                    current_db[reg_id] = {
+                        "pw": reg_pw,
+                        "role": "USER",
+                        "status": "ACTIVE",
+                        "pw_last_changed": now_iso,
+                        "pw_history": [{"timestamp": now_iso, "changed_by": "본인(회원가입)"}]
+                    }
+                    save_user_db(current_db)
+                    st.session_state.user_db = current_db
+                    st.success("🚀 회원가입 성공! 이제 로그인 탭에서 로그인해 주세요.")
+
+# ==========================================
+# [신규 추가] 비밀번호 변경 모달
+# ==========================================
+@st.dialog("🔒 비밀번호 변경")
+def change_password_dialog():
+    current_user = st.session_state.logged_in_user
+    st.write(f"현재 로그인 계정: **{current_user}**")
+    st.write("---")
+
+    cur_pw = st.text_input("현재 비밀번호", type="password", key="pw_change_current").strip()
+    new_pw = st.text_input("새 비밀번호", type="password", key="pw_change_new").strip()
+    new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", key="pw_change_confirm").strip()
+    st.caption(PASSWORD_POLICY_HINT)
+
+    if st.button("💾 비밀번호 변경하기", use_container_width=True):
+        current_db = load_user_db()
+
+        if current_user not in current_db:
+            st.error("❌ 계정 정보를 찾을 수 없습니다. 다시 로그인해주세요.")
+        elif current_db[current_user]["pw"] != cur_pw:
+            st.error("❌ 현재 비밀번호가 일치하지 않습니다.")
+        elif not new_pw:
+            st.warning("⚠️ 새 비밀번호를 입력해주세요.")
+        elif new_pw == cur_pw:
+            st.warning("⚠️ 새 비밀번호는 현재 비밀번호와 달라야 합니다.")
+        elif new_pw != new_pw_confirm:
+            st.error("❌ 새 비밀번호 확인이 일치하지 않습니다.")
+        else:
+            is_valid, policy_msg = validate_password_policy(new_pw)
+            if not is_valid:
+                st.error(f"❌ {policy_msg}")
+            else:
+                current_db[current_user]["pw"] = new_pw
+                log_password_change(current_db, current_user, "본인")
                 save_user_db(current_db)
-                st.session_state.user_db = current_db  
-                st.success("🚀 회원가입 성공! 이제 로그인 탭에서 로그인해 주세요.")
+                st.session_state.user_db = current_db
+                st.session_state.force_pw_change = False
+                st.success("✅ 비밀번호가 성공적으로 변경되었습니다! 잠시 후 창이 닫힙니다.")
+                time.sleep(1.2)
+                st.rerun()
 
 # AI 뉴스 요약 모달 창
 @st.dialog("🎯 AI 요약 브리핑")
@@ -363,15 +522,63 @@ with c_right:
         if st.session_state.logged_in_user is None:
             if st.button(T["auth"]): auth_dialog()
         else:
-            if st.button(f"🔓 로그아웃 ({st.session_state.logged_in_user})"):
-                st.session_state.logged_in_user = None
-                st.rerun()
+            # [수정] 로그인 상태일 때 비밀번호 변경 버튼과 로그아웃 버튼을 함께 표시
+            b_pw, b_logout = st.columns(2)
+            with b_pw:
+                if st.button(T["change_pw_btn"]):
+                    change_password_dialog()
+            with b_logout:
+                if st.button(f"🔓 로그아웃 ({st.session_state.logged_in_user})"):
+                    st.session_state.logged_in_user = None
+                    st.rerun()
 
 st.markdown('</div></div>', unsafe_allow_html=True)
 
 # 메인 뷰포트 레이아웃
 st.markdown(f'<div class="centered-wrapper"><div class="hero-section"><div class="hero-title">{T["title"]}</div><div class="hero-subtitle">🏔️ {T["subtitle"]}</div></div></div>', unsafe_allow_html=True)
 st.markdown('<div class="content-box">', unsafe_allow_html=True)
+
+# ==========================================
+# [신규 추가] 비밀번호 만료 시 강제 변경 게이트
+# 로그인 상태에서 비밀번호가 만료된 경우, 변경 전까지 다른 메뉴 접근을 차단합니다.
+# ==========================================
+if st.session_state.logged_in_user and st.session_state.get("force_pw_change", False):
+    st.warning(f"🔔 보안 정책에 따라 비밀번호가 {PASSWORD_EXPIRY_DAYS}일 이상 경과하여 만료되었습니다. 계속 이용하시려면 먼저 비밀번호를 변경해주세요.")
+    st.markdown("### 🔒 비밀번호 만료 - 변경 필수")
+
+    force_cur_pw = st.text_input("현재 비밀번호", type="password", key="force_pw_current").strip()
+    force_new_pw = st.text_input("새 비밀번호", type="password", key="force_pw_new").strip()
+    force_new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", key="force_pw_confirm").strip()
+    st.caption(PASSWORD_POLICY_HINT)
+
+    if st.button("💾 비밀번호 변경하고 계속하기", use_container_width=True, key="force_pw_submit_btn"):
+        force_db = load_user_db()
+        uid = st.session_state.logged_in_user
+        if uid not in force_db:
+            st.error("❌ 계정 정보를 찾을 수 없습니다. 다시 로그인해주세요.")
+        elif force_db[uid]["pw"] != force_cur_pw:
+            st.error("❌ 현재 비밀번호가 일치하지 않습니다.")
+        elif not force_new_pw:
+            st.warning("⚠️ 새 비밀번호를 입력해주세요.")
+        elif force_new_pw == force_cur_pw:
+            st.warning("⚠️ 새 비밀번호는 현재 비밀번호와 달라야 합니다.")
+        elif force_new_pw != force_new_pw_confirm:
+            st.error("❌ 새 비밀번호 확인이 일치하지 않습니다.")
+        else:
+            is_valid, policy_msg = validate_password_policy(force_new_pw)
+            if not is_valid:
+                st.error(f"❌ {policy_msg}")
+            else:
+                force_db[uid]["pw"] = force_new_pw
+                log_password_change(force_db, uid, "본인(만료 강제 변경)")
+                save_user_db(force_db)
+                st.session_state.user_db = force_db
+                st.session_state.force_pw_change = False
+                st.success("✅ 비밀번호가 변경되었습니다. 계속 이용하실 수 있습니다.")
+                time.sleep(1)
+                st.rerun()
+
+    st.stop()
 
 # -------------------------------------------------------------------------
 # [라우터 메뉴 분기 제어 체계]
@@ -566,6 +773,117 @@ elif st.session_state.menu_idx == 4:
                 toast_msg = T["toast_update"].format(bib=target_bib, status=new_status)
                 st.toast(toast_msg)
                 st.success(f"✅ 배번호 [{target_bib}] {athlete_data['Name']} 선수의 기록이 업데이트되었습니다.")
+
+        # -------------------------------------------------------------
+        # [신규 추가] 관리자(ADMIN) 전용 - 사용자 비밀번호 초기화 패널
+        # JUDGE 권한은 접근 불가, ADMIN 권한만 접근 가능
+        # -------------------------------------------------------------
+        if current_db.get(current_user, {}).get("role") == "ADMIN":
+            st.markdown("---")
+            st.markdown("### 🛡️ 관리자 전용 - 계정 비밀번호 초기화")
+            st.caption("본인 계정이 아닌 다른 사용자의 비밀번호를 초기화하거나 직접 지정할 수 있습니다. (ADMIN 권한 전용)")
+
+            with st.expander("👥 사용자 계정 비밀번호 관리 열기", expanded=False):
+                admin_db = load_user_db()
+                user_list = list(admin_db.keys())
+                target_user_id = st.selectbox("대상 계정 선택 (아이디)", user_list, key="admin_target_user_select")
+                st.write(f"선택된 계정 권한: **{admin_db.get(target_user_id, {}).get('role', '알수없음')}**")
+
+                reset_mode = st.radio(
+                    "초기화 방식 선택",
+                    ["🎲 임시 비밀번호 자동 발급", "✍️ 새 비밀번호 직접 지정"],
+                    horizontal=True,
+                    key="admin_reset_mode"
+                )
+
+                if reset_mode == "🎲 임시 비밀번호 자동 발급":
+                    st.caption("정책(8자 이상, 영문+숫자+특수문자)을 만족하는 임시 비밀번호를 자동 생성합니다.")
+                    if st.button("🔄 임시 비밀번호 발급하기", key="admin_temp_reset_btn"):
+                        admin_db_fresh = load_user_db()
+                        if target_user_id not in admin_db_fresh:
+                            st.error("❌ 대상 계정을 찾을 수 없습니다.")
+                        else:
+                            temp_pw = generate_temp_password()
+                            admin_db_fresh[target_user_id]["pw"] = temp_pw
+                            log_password_change(admin_db_fresh, target_user_id, f"관리자({current_user})")
+                            save_user_db(admin_db_fresh)
+                            st.session_state.user_db = admin_db_fresh
+                            st.success(f"✅ [{target_user_id}] 계정의 비밀번호가 초기화되었습니다.")
+                            st.code(temp_pw, language=None)
+                            st.warning("⚠️ 이 임시 비밀번호를 해당 사용자에게 안전한 채널로 전달하고, 로그인 후 즉시 변경하도록 안내하세요. 이 화면을 벗어나면 다시 확인할 수 없습니다.")
+                else:
+                    admin_new_pw = st.text_input("새 비밀번호 지정", type="password", key="admin_new_pw_input").strip()
+                    admin_new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", key="admin_new_pw_confirm_input").strip()
+                    st.caption(PASSWORD_POLICY_HINT)
+                    if st.button("💾 비밀번호 직접 변경하기", key="admin_direct_reset_btn"):
+                        admin_db_fresh = load_user_db()
+                        if target_user_id not in admin_db_fresh:
+                            st.error("❌ 대상 계정을 찾을 수 없습니다.")
+                        elif not admin_new_pw:
+                            st.warning("⚠️ 새 비밀번호를 입력해주세요.")
+                        elif admin_new_pw != admin_new_pw_confirm:
+                            st.error("❌ 비밀번호 확인이 일치하지 않습니다.")
+                        else:
+                            is_valid, policy_msg = validate_password_policy(admin_new_pw)
+                            if not is_valid:
+                                st.error(f"❌ {policy_msg}")
+                            else:
+                                admin_db_fresh[target_user_id]["pw"] = admin_new_pw
+                                log_password_change(admin_db_fresh, target_user_id, f"관리자({current_user})")
+                                save_user_db(admin_db_fresh)
+                                st.session_state.user_db = admin_db_fresh
+                                st.success(f"✅ [{target_user_id}] 계정의 비밀번호가 변경되었습니다.")
+
+            # -------------------------------------------------------------
+            # [신규 추가] 관리자 전용 - 계정 상태 관리 (정지/정지해제/삭제)
+            # -------------------------------------------------------------
+            st.markdown("---")
+            st.markdown("### 🚫 관리자 전용 - 계정 상태 관리 (정지 / 삭제)")
+            st.caption("문제가 있는 계정을 정지시키거나 영구 삭제할 수 있습니다. 본인 계정은 이 패널에서 정지/삭제할 수 없습니다.")
+
+            with st.expander("🗂️ 계정 상태 관리 열기", expanded=False):
+                admin_db_status = load_user_db()
+                status_user_list = list(admin_db_status.keys())
+                status_target_id = st.selectbox("대상 계정 선택 (아이디)", status_user_list, key="admin_status_target_select")
+
+                if status_target_id == current_user:
+                    st.info("ℹ️ 본인 계정은 이 패널에서 정지하거나 삭제할 수 없습니다. 다른 관리자에게 요청해주세요.")
+                else:
+                    target_info = admin_db_status.get(status_target_id, {})
+                    current_status = target_info.get("status", "ACTIVE")
+                    status_label = "🟢 활성 (ACTIVE)" if current_status == "ACTIVE" else "🔴 정지 (SUSPENDED)"
+                    st.write(f"현재 상태: **{status_label}**")
+                    st.write(f"권한: **{target_info.get('role', '알수없음')}**")
+                    st.write(f"마지막 비밀번호 변경: **{target_info.get('pw_last_changed', '기록 없음')}**")
+
+                    # 비밀번호 변경 이력 표시
+                    history = target_info.get("pw_history", [])
+                    if history:
+                        with st.popover("🕒 비밀번호 변경 이력 보기"):
+                            st.caption(f"최근 {min(len(history), 10)}건 표시")
+                            for h in reversed(history[-10:]):
+                                st.write(f"- `{h.get('timestamp', '알수없음')}` · 변경자: **{h.get('changed_by', '알수없음')}**")
+
+                    c_status1, c_status2 = st.columns(2)
+                    with c_status1:
+                        toggle_label = "🔴 계정 정지하기" if current_status == "ACTIVE" else "🟢 계정 정지 해제하기"
+                        if st.button(toggle_label, key="admin_toggle_status_btn", use_container_width=True):
+                            fresh_db = load_user_db()
+                            fresh_db[status_target_id]["status"] = "SUSPENDED" if current_status == "ACTIVE" else "ACTIVE"
+                            save_user_db(fresh_db)
+                            st.session_state.user_db = fresh_db
+                            st.success(f"✅ [{status_target_id}] 계정 상태가 변경되었습니다.")
+                            st.rerun()
+                    with c_status2:
+                        confirm_delete = st.checkbox("삭제를 확인합니다 (되돌릴 수 없음)", key="admin_delete_confirm_checkbox")
+                        if st.button("🗑️ 계정 영구 삭제", key="admin_delete_account_btn", use_container_width=True, disabled=not confirm_delete):
+                            fresh_db = load_user_db()
+                            if status_target_id in fresh_db:
+                                del fresh_db[status_target_id]
+                                save_user_db(fresh_db)
+                                st.session_state.user_db = fresh_db
+                                st.success(f"✅ [{status_target_id}] 계정이 영구 삭제되었습니다.")
+                                st.rerun()
 
 # -------------------------------------------------------------------------
 # [📢 글로벌 공지사항 - notice_data.json 자동 로드]
