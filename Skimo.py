@@ -266,7 +266,8 @@ LOCALIZED_TEXT = {
         "e3_t": "3. 등반용 클라이밍 스킨 (Climbing Skins)", "e3_d": "스키 플레이트 바닥에 붙이는 모헤어(Mohair) 소재의 전용 스킨입니다. 앞방향으로는 미끄러지지만, 뒷방향으로는 털이 서서 눈을 움켜쥐기 때문에 미끄러지지 않고 수직 오르막을 오를 수 있습니다.",
         "e4_t": "4. 워크 모드 지원 부츠 (Skimo Boots)", "e4_d": "레버 하나로 발목 관절 구동 범위를 60도 이상 확보하는 '워크 모드'와 활강을 위해 고정하는 '스키 모드'를 전환할 수 있습니다. 카본 재질로 발목 피로도를 최소화합니다.",
         "e5_t": "5. 탄소섬유 카본 폴 (Carbon Poles)", "e5_d": "상체 반동과 팔 근육을 이용해 업힐 추진력을 내는 도구입니다. 일반 스키 폴보다 길며, 샤프트 전체가 100% High-Modulus 카본으로 되어 있어 매우 가볍고 단단한 강성을 유지합니다.",
-        "change_pw_btn": "🔒 비밀번호 변경"
+        "change_pw_btn": "🔒 비밀번호 변경",
+        "forgot_pw_btn": "🔑 비밀번호 재설정"
     },
     "EN": {
         "title": "SKIMO KOREA", "subtitle": "Ski Mountaineering Information Portal",
@@ -284,7 +285,8 @@ LOCALIZED_TEXT = {
         "e3_t": "3. Climbing Skins", "e3_d": "Mohair-based skins attached to ski bases. They glide forward smoothly but grip the snow firmly when moving backwards to allow vertical climbing.",
         "e4_t": "4. Walk-Mode Boots", "e4_d": "Features a swift lever switching between a 60° ankle rotation 'Walk Mode' and a rigid 'Ski Mode' for high-speed alpine descents.",
         "e5_t": "5. Carbon Racing Poles", "e5_d": "Provides essential upper-body propulsion during climbs. Slightly longer than alpine poles, built with 100% high-modulus carbon fiber.",
-        "change_pw_btn": "🔒 Change Password"
+        "change_pw_btn": "🔒 Change Password",
+        "forgot_pw_btn": "🔑 Reset Password"
     },
     "FR": {
         "title": "SKIMO KOREA", "subtitle": "Portail d'information sur le ski-alpinisme",
@@ -302,7 +304,8 @@ LOCALIZED_TEXT = {
         "e3_t": "3. Peaux de phoque", "e3_d": "Peaux en mohair fixées sous les skis. Elles glissent vers l'avant mais agrippent la neige vers l'arrière pour permettre les ascensions verticales.",
         "e4_t": "4. Chaussures avec mode marche", "e4_d": "Dotées d'un levier basculant entre un 'Mode Marche' à 60° de rotation et un 'Mode Ski' rigide pour les descentes alpines rapides.",
         "e5_t": "5. Bâtons de course en carbone", "e5_d": "Fournissent la propulsion du haut du corps en montée. Plus longs que les bâtons alpins, 100% en fibre de carbone haute rigidité.",
-        "change_pw_btn": "🔒 Changer le mot de passe"
+        "change_pw_btn": "🔒 Changer le mot de passe",
+        "forgot_pw_btn": "🔑 Réinitialiser le mot de passe"
     },
     "IT": {
         "title": "SKIMO KOREA", "subtitle": "Portale informativo sullo sci alpinismo",
@@ -320,7 +323,8 @@ LOCALIZED_TEXT = {
         "e3_t": "3. Pelli di foca (Skins)", "e3_d": "Pelli in mohair applicate sotto la soletta. Scivolano in avanti ma fanno presa sulla neve all'indietro per consentire la salita verticale.",
         "e4_t": "4. Scarponi modalità Walk", "e4_d": "Dotati di una leva rapida che passa dalla modalità 'Walk' (rotazione caviglia >60°) alla modalità 'Ski' rigida per la discesa.",
         "e5_t": "5. Bastoncini in carbonio", "e5_d": "Forniscono la propulsione essenziale della parte superiore del corpo. Più lunghi dei bastoncini alpini, 100% in carbonio ad alto modulo.",
-        "change_pw_btn": "🔒 Cambia password"
+        "change_pw_btn": "🔒 Cambia password",
+        "forgot_pw_btn": "🔑 Reimposta password"
     },
     "ZH": {
         "title": "SKIMO KOREA", "subtitle": "滑雪登山信息门户网站",
@@ -338,7 +342,8 @@ LOCALIZED_TEXT = {
         "e3_t": "3. 防滑攀登雪皮", "e3_d": "贴在雪板底部的马海毛材质专用雪皮。向前可平滑向前滑行，向后时绒毛抓雪倒伏防滑，实现垂直攀登。",
         "e4_t": "4. 步行模式滑雪鞋", "e4_d": "具备快速换挡杆，可在提供60度以上踝关节活动度的“步行模式”与高强度滑降的“滑雪模式”之间自由切换。",
         "e5_t": "5. 碳纤维竞赛雪杖", "e5_d": "用于在攀登过程中提供上肢推进力。长度略长于普通高山雪杖，由100%高模量碳纤维制成，极轻且坚硬。",
-        "change_pw_btn": "🔒 修改密码"
+        "change_pw_btn": "🔒 修改密码",
+        "forgot_pw_btn": "🔑 重置密码"
     },
     "JA": {
         "title": "SKIMO KOREA", "subtitle": "山岳スキー情報ポータル",
@@ -356,7 +361,8 @@ LOCALIZED_TEXT = {
         "e3_t": "3. クライミングスキン", "e3_d": "滑走面に貼り付けるモヘア素材의 専用スキンです。前方には滑りますが、後方には毛が立ち雪を掴むため、斜面を垂直に登れます。",
         "e4_t": "4. ウォークモード対応ブーツ", "e4_d": "レバー一つで足首の可動域を60度以上確保する「ウォークモード」と、滑走用に固定する「スキーモード」を切り替えられる軽量カーボンブーツです。",
         "e5_t": "5. カーボンレーシングポール", "e5_d": "上半身の推進力を得るための道具です。通常のアルペンポールより長めで、100%高弾性カーボン製のため非常に軽く頑丈です。",
-        "change_pw_btn": "🔒 パスワード変更"
+        "change_pw_btn": "🔒 パスワード変更",
+        "forgot_pw_btn": "🔑 パスワード再設定"
     }
 }
 
@@ -456,6 +462,47 @@ def change_password_dialog():
                 time.sleep(1.2)
                 st.rerun()
 
+# ==========================================
+# [신규 추가] 비로그인 상태에서도 사용 가능한 비밀번호 재설정(찾기) 모달
+# 로그인이 되지 않은 상태에서도 아이디만 확인되면 비밀번호를 재설정할 수 있습니다.
+# ==========================================
+@st.dialog("🔑 비밀번호 재설정")
+def forgot_password_dialog():
+    st.write("가입된 아이디를 입력하고 새 비밀번호를 설정해주세요.")
+    st.caption("⚠️ 간이 재설정 기능입니다. 별도의 본인 인증 절차 없이 아이디 확인만으로 비밀번호가 변경되니, 실제 운영 환경에서는 이메일/SMS 인증 절차 추가를 권장합니다.")
+    st.write("---")
+
+    forgot_id = st.text_input("아이디", key="forgot_pw_id").strip()
+    forgot_new_pw = st.text_input("새 비밀번호", type="password", key="forgot_pw_new").strip()
+    forgot_new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", key="forgot_pw_confirm").strip()
+    st.caption(PASSWORD_POLICY_HINT)
+
+    if st.button("🔄 비밀번호 재설정하기", use_container_width=True):
+        forgot_db = load_user_db()
+
+        if not forgot_id:
+            st.warning("⚠️ 아이디를 입력해주세요.")
+        elif forgot_id not in forgot_db:
+            st.error("❌ 존재하지 않는 아이디입니다. 아이디를 다시 확인해주세요.")
+        elif forgot_db[forgot_id].get("status", "ACTIVE") == "SUSPENDED":
+            st.error("🚫 정지된 계정입니다. 관리자에게 문의해주세요.")
+        elif not forgot_new_pw:
+            st.warning("⚠️ 새 비밀번호를 입력해주세요.")
+        elif forgot_new_pw != forgot_new_pw_confirm:
+            st.error("❌ 새 비밀번호 확인이 일치하지 않습니다.")
+        else:
+            is_valid, policy_msg = validate_password_policy(forgot_new_pw)
+            if not is_valid:
+                st.error(f"❌ {policy_msg}")
+            else:
+                forgot_db[forgot_id]["pw"] = forgot_new_pw
+                log_password_change(forgot_db, forgot_id, "본인(비로그인 재설정)")
+                save_user_db(forgot_db)
+                st.session_state.user_db = forgot_db
+                st.success(f"✅ [{forgot_id}] 계정의 비밀번호가 재설정되었습니다! 이제 새 비밀번호로 로그인해주세요.")
+                time.sleep(1.5)
+                st.rerun()
+
 # AI 뉴스 요약 모달 창
 @st.dialog("🎯 AI 요약 브리핑")
 def ai_summary_dialog(news_item, lang_code):
@@ -520,9 +567,16 @@ with c_right:
             
     with sub_buttons:
         if st.session_state.logged_in_user is None:
-            if st.button(T["auth"]): auth_dialog()
+            # [수정] 비로그인 상태에서도 "로그인/회원가입" 버튼 옆에 "비밀번호 재설정" 버튼을 함께 표시
+            b_auth, b_forgot = st.columns(2)
+            with b_auth:
+                if st.button(T["auth"]):
+                    auth_dialog()
+            with b_forgot:
+                if st.button(T["forgot_pw_btn"]):
+                    forgot_password_dialog()
         else:
-            # [수정] 로그인 상태일 때 비밀번호 변경 버튼과 로그아웃 버튼을 함께 표시
+            # 로그인 상태일 때 비밀번호 변경 버튼과 로그아웃 버튼을 함께 표시
             b_pw, b_logout = st.columns(2)
             with b_pw:
                 if st.button(T["change_pw_btn"]):
