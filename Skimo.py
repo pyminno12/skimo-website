@@ -37,6 +37,8 @@ def ensure_user_meta_fields(db_data: dict) -> dict:
     - status: ACTIVE / SUSPENDED
     - pw_last_changed: 마지막 비밀번호 변경 시각 (ISO 포맷)
     - pw_history: 비밀번호 변경 이력 로그
+    - email: 본인 인증용 이메일 (없으면 None)
+    - phone: 본인 인증용 휴대폰 번호 (없으면 None)
     """
     changed = False
     now_iso = datetime.now().isoformat(timespec="seconds")
@@ -49,6 +51,12 @@ def ensure_user_meta_fields(db_data: dict) -> dict:
             changed = True
         if "pw_history" not in info:
             info["pw_history"] = [{"timestamp": now_iso, "changed_by": "시스템(자동 보정)"}]
+            changed = True
+        if "email" not in info:
+            info["email"] = None
+            changed = True
+        if "phone" not in info:
+            info["phone"] = None
             changed = True
     if changed:
         save_user_db(db_data)
@@ -65,12 +73,14 @@ def load_user_db():
             "admin": {
                 "pw": "1234", "role": "ADMIN", "status": "ACTIVE",
                 "pw_last_changed": now_iso,
-                "pw_history": [{"timestamp": now_iso, "changed_by": "시스템(초기 생성)"}]
+                "pw_history": [{"timestamp": now_iso, "changed_by": "시스템(초기 생성)"}],
+                "email": None, "phone": None
             },
             "skimo": {
                 "pw": "skimo123", "role": "JUDGE", "status": "ACTIVE",
                 "pw_last_changed": now_iso,
-                "pw_history": [{"timestamp": now_iso, "changed_by": "시스템(초기 생성)"}]
+                "pw_history": [{"timestamp": now_iso, "changed_by": "시스템(초기 생성)"}],
+                "email": None, "phone": None
             }
         }
         save_user_db(initial_db)
@@ -139,6 +149,95 @@ def log_password_change(db_data: dict, user_id: str, changed_by: str):
     db_data[user_id].setdefault("pw_history", []).append({"timestamp": now_iso, "changed_by": changed_by})
     # 이력은 최근 20건까지만 보관 (파일 비대화 방지)
     db_data[user_id]["pw_history"] = db_data[user_id]["pw_history"][-20:]
+
+# ==========================================
+# [신규 추가] 이메일/SMS 본인 인증(OTP) 시스템
+# ==========================================
+OTP_EXPIRY_SECONDS = 300  # 인증번호 유효시간: 5분
+
+def generate_otp_code() -> str:
+    """6자리 숫자 인증번호를 안전하게 생성합니다."""
+    return f"{secrets.randbelow(1000000):06d}"
+
+def mask_email(email: str) -> str:
+    """이메일 주소를 부분적으로 마스킹합니다. 예: ab****@gmail.com"""
+    if not email or "@" not in email:
+        return "*****"
+    local, domain = email.split("@", 1)
+    if len(local) <= 2:
+        masked_local = local[0] + "*" * max(len(local) - 1, 1)
+    else:
+        masked_local = local[:2] + "*" * (len(local) - 2)
+    return f"{masked_local}@{domain}"
+
+def mask_phone(phone: str) -> str:
+    """휴대폰 번호를 부분적으로 마스킹합니다. 예: *******1234"""
+    digits = re.sub(r"\D", "", phone or "")
+    if len(digits) < 4:
+        return "*" * len(digits)
+    return "*" * (len(digits) - 4) + digits[-4:]
+
+def send_email_otp(to_email: str, otp_code: str):
+    """
+    st.secrets['smtp']에 SMTP 설정(host, port, user, password, sender)이 있으면
+    실제 이메일을 발송합니다. 설정이 없거나 발송에 실패하면
+    (False, 안내메시지)를 반환해 호출부에서 데모 모드로 처리하도록 합니다.
+    """
+    try:
+        smtp_conf = st.secrets.get("smtp", None)
+    except Exception:
+        smtp_conf = None
+
+    if not smtp_conf:
+        return False, "SMTP 설정이 등록되어 있지 않아 실제 이메일이 발송되지 않았습니다."
+
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+
+        sender = smtp_conf.get("sender", smtp_conf.get("user", ""))
+        msg = MIMEText(
+            f"[SKIMO KOREA] 비밀번호 재설정 인증번호는 {otp_code} 입니다.\n"
+            f"인증번호는 {OTP_EXPIRY_SECONDS // 60}분간 유효합니다.\n"
+            f"본인이 요청하지 않았다면 이 메일을 무시해주세요."
+        )
+        msg["Subject"] = "[SKIMO KOREA] 비밀번호 재설정 인증번호"
+        msg["From"] = sender
+        msg["To"] = to_email
+
+        with smtplib.SMTP(smtp_conf["host"], int(smtp_conf.get("port", 587))) as server:
+            server.starttls()
+            server.login(smtp_conf["user"], smtp_conf["password"])
+            server.sendmail(sender, [to_email], msg.as_string())
+        return True, f"{mask_email(to_email)} 주소로 인증번호를 발송했습니다."
+    except Exception as e:
+        return False, f"이메일 발송 중 오류가 발생했습니다: {e}"
+
+def send_sms_otp(phone_number: str, otp_code: str):
+    """
+    st.secrets['twilio']에 Twilio 설정(account_sid, auth_token, from_number)이 있으면
+    실제 SMS를 발송합니다. 설정이 없거나 발송에 실패하면
+    (False, 안내메시지)를 반환해 호출부에서 데모 모드로 처리하도록 합니다.
+    """
+    try:
+        twilio_conf = st.secrets.get("twilio", None)
+    except Exception:
+        twilio_conf = None
+
+    if not twilio_conf:
+        return False, "SMS 발송 설정(Twilio 등)이 등록되어 있지 않아 실제 문자가 발송되지 않았습니다."
+
+    try:
+        from twilio.rest import Client
+        client = Client(twilio_conf["account_sid"], twilio_conf["auth_token"])
+        client.messages.create(
+            body=f"[SKIMO KOREA] 비밀번호 재설정 인증번호: {otp_code} (5분간 유효)",
+            from_=twilio_conf["from_number"],
+            to=phone_number
+        )
+        return True, f"{mask_phone(phone_number)} 번호로 인증번호를 발송했습니다."
+    except Exception as e:
+        return False, f"SMS 발송 중 오류가 발생했습니다: {e}"
 
 st.session_state.user_db = load_user_db()
 
@@ -396,14 +495,24 @@ def auth_dialog():
         reg_pw = st.text_input("새로운 비밀번호 설정", type="password", key="reg_pw").strip()
         reg_pw_confirm = st.text_input("비밀번호 확인", type="password", key="reg_pw_confirm").strip()
         st.caption(PASSWORD_POLICY_HINT)
+        st.write("---")
+        reg_email = st.text_input("이메일 (비밀번호 재설정용, 필수)", key="reg_email").strip()
+        reg_phone = st.text_input("휴대폰 번호 (선택, 예: 010-1234-5678)", key="reg_phone").strip()
+        st.caption("📧 이메일은 비밀번호를 잊었을 때 본인 인증(인증번호 발송)을 위해 사용됩니다.")
+
         if st.button("회원가입 신청", use_container_width=True):
             current_db = load_user_db()
+            EMAIL_REGEX = r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
             if not reg_id or not reg_pw:
                 st.warning("⚠️ 아이디와 비밀번호를 모두 입력해주세요.")
             elif reg_id in current_db:
                 st.error("❌ 이미 존재하는 아이디입니다. 다른 아이디를 사용해주세요.")
             elif reg_pw != reg_pw_confirm:
                 st.error("❌ 비밀번호 확인이 일치하지 않습니다.")
+            elif not reg_email:
+                st.warning("⚠️ 비밀번호 재설정을 위해 이메일은 필수로 입력해주세요.")
+            elif not re.match(EMAIL_REGEX, reg_email):
+                st.error("❌ 올바른 이메일 형식이 아닙니다. (예: name@example.com)")
             else:
                 is_valid, policy_msg = validate_password_policy(reg_pw)
                 if not is_valid:
@@ -415,7 +524,9 @@ def auth_dialog():
                         "role": "USER",
                         "status": "ACTIVE",
                         "pw_last_changed": now_iso,
-                        "pw_history": [{"timestamp": now_iso, "changed_by": "본인(회원가입)"}]
+                        "pw_history": [{"timestamp": now_iso, "changed_by": "본인(회원가입)"}],
+                        "email": reg_email,
+                        "phone": reg_phone if reg_phone else None
                     }
                     save_user_db(current_db)
                     st.session_state.user_db = current_db
@@ -430,78 +541,241 @@ def change_password_dialog():
     st.write(f"현재 로그인 계정: **{current_user}**")
     st.write("---")
 
-    cur_pw = st.text_input("현재 비밀번호", type="password", key="pw_change_current").strip()
-    new_pw = st.text_input("새 비밀번호", type="password", key="pw_change_new").strip()
-    new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", key="pw_change_confirm").strip()
-    st.caption(PASSWORD_POLICY_HINT)
+    tab_pw, tab_contact = st.tabs(["🔒 비밀번호 변경", "📧 연락처 정보"])
 
-    if st.button("💾 비밀번호 변경하기", use_container_width=True):
-        current_db = load_user_db()
+    with tab_pw:
+        cur_pw = st.text_input("현재 비밀번호", type="password", key="pw_change_current").strip()
+        new_pw = st.text_input("새 비밀번호", type="password", key="pw_change_new").strip()
+        new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", key="pw_change_confirm").strip()
+        st.caption(PASSWORD_POLICY_HINT)
 
-        if current_user not in current_db:
-            st.error("❌ 계정 정보를 찾을 수 없습니다. 다시 로그인해주세요.")
-        elif current_db[current_user]["pw"] != cur_pw:
-            st.error("❌ 현재 비밀번호가 일치하지 않습니다.")
-        elif not new_pw:
-            st.warning("⚠️ 새 비밀번호를 입력해주세요.")
-        elif new_pw == cur_pw:
-            st.warning("⚠️ 새 비밀번호는 현재 비밀번호와 달라야 합니다.")
-        elif new_pw != new_pw_confirm:
-            st.error("❌ 새 비밀번호 확인이 일치하지 않습니다.")
-        else:
-            is_valid, policy_msg = validate_password_policy(new_pw)
-            if not is_valid:
-                st.error(f"❌ {policy_msg}")
+        if st.button("💾 비밀번호 변경하기", use_container_width=True):
+            current_db = load_user_db()
+
+            if current_user not in current_db:
+                st.error("❌ 계정 정보를 찾을 수 없습니다. 다시 로그인해주세요.")
+            elif current_db[current_user]["pw"] != cur_pw:
+                st.error("❌ 현재 비밀번호가 일치하지 않습니다.")
+            elif not new_pw:
+                st.warning("⚠️ 새 비밀번호를 입력해주세요.")
+            elif new_pw == cur_pw:
+                st.warning("⚠️ 새 비밀번호는 현재 비밀번호와 달라야 합니다.")
+            elif new_pw != new_pw_confirm:
+                st.error("❌ 새 비밀번호 확인이 일치하지 않습니다.")
             else:
-                current_db[current_user]["pw"] = new_pw
-                log_password_change(current_db, current_user, "본인")
-                save_user_db(current_db)
-                st.session_state.user_db = current_db
-                st.session_state.force_pw_change = False
-                st.success("✅ 비밀번호가 성공적으로 변경되었습니다! 잠시 후 창이 닫힙니다.")
-                time.sleep(1.2)
+                is_valid, policy_msg = validate_password_policy(new_pw)
+                if not is_valid:
+                    st.error(f"❌ {policy_msg}")
+                else:
+                    current_db[current_user]["pw"] = new_pw
+                    log_password_change(current_db, current_user, "본인")
+                    save_user_db(current_db)
+                    st.session_state.user_db = current_db
+                    st.session_state.force_pw_change = False
+                    st.success("✅ 비밀번호가 성공적으로 변경되었습니다! 잠시 후 창이 닫힙니다.")
+                    time.sleep(1.2)
+                    st.rerun()
+
+    with tab_contact:
+        st.caption("여기서 등록한 이메일/휴대폰 번호는 '비밀번호 재설정(OTP 인증)' 기능에 사용됩니다.")
+        contact_db = load_user_db()
+        my_info = contact_db.get(current_user, {})
+        my_email = my_info.get("email") or ""
+        my_phone = my_info.get("phone") or ""
+
+        new_email = st.text_input("이메일", value=my_email, key="my_contact_email").strip()
+        new_phone = st.text_input("휴대폰 번호", value=my_phone, key="my_contact_phone").strip()
+
+        if st.button("💾 연락처 정보 저장", use_container_width=True, key="my_contact_save_btn"):
+            EMAIL_REGEX = r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+            if new_email and not re.match(EMAIL_REGEX, new_email):
+                st.error("❌ 올바른 이메일 형식이 아닙니다. (예: name@example.com)")
+            else:
+                fresh_db = load_user_db()
+                fresh_db[current_user]["email"] = new_email if new_email else None
+                fresh_db[current_user]["phone"] = new_phone if new_phone else None
+                save_user_db(fresh_db)
+                st.session_state.user_db = fresh_db
+                st.success("✅ 연락처 정보가 저장되었습니다.")
+                time.sleep(1)
                 st.rerun()
 
 # ==========================================
-# [신규 추가] 비로그인 상태에서도 사용 가능한 비밀번호 재설정(찾기) 모달
-# 로그인이 되지 않은 상태에서도 아이디만 확인되면 비밀번호를 재설정할 수 있습니다.
+# [신규 추가] 이메일/SMS 본인 인증(OTP) 기반 비밀번호 재설정 모달
+# 1단계: 아이디 입력 + 인증 채널 선택 → 인증번호 발송
+# 2단계: 인증번호 확인
+# 3단계: 인증 완료 후 새 비밀번호 설정
 # ==========================================
+def _reset_pw_flow_state():
+    """비밀번호 재설정 플로우 상태를 처음으로 초기화합니다."""
+    st.session_state.pw_reset_step = "id_input"
+    st.session_state.pw_reset_target_id = ""
+    st.session_state.pw_reset_otp_code = None
+    st.session_state.pw_reset_otp_expiry = None
+    st.session_state.pw_reset_channel = None
+    st.session_state.pw_reset_verified = False
+
 @st.dialog("🔑 비밀번호 재설정")
 def forgot_password_dialog():
-    st.write("가입된 아이디를 입력하고 새 비밀번호를 설정해주세요.")
-    st.caption("⚠️ 간이 재설정 기능입니다. 별도의 본인 인증 절차 없이 아이디 확인만으로 비밀번호가 변경되니, 실제 운영 환경에서는 이메일/SMS 인증 절차 추가를 권장합니다.")
-    st.write("---")
+    # 세션 상태 초기화 (최초 진입 시에만)
+    if "pw_reset_step" not in st.session_state:
+        _reset_pw_flow_state()
 
-    forgot_id = st.text_input("아이디", key="forgot_pw_id").strip()
-    forgot_new_pw = st.text_input("새 비밀번호", type="password", key="forgot_pw_new").strip()
-    forgot_new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", key="forgot_pw_confirm").strip()
-    st.caption(PASSWORD_POLICY_HINT)
+    step = st.session_state.pw_reset_step
 
-    if st.button("🔄 비밀번호 재설정하기", use_container_width=True):
-        forgot_db = load_user_db()
+    # -------------------------------------------------------------
+    # STEP 1: 아이디 입력 + 인증 채널(이메일/SMS) 선택 후 인증번호 발송
+    # -------------------------------------------------------------
+    if step == "id_input":
+        st.write("가입된 아이디를 입력하고 본인 인증을 진행해주세요.")
+        st.caption("🔐 등록된 이메일 또는 휴대폰 번호로 인증번호(OTP)를 발송하여 본인 확인 후 비밀번호를 재설정합니다.")
+        st.write("---")
 
-        if not forgot_id:
-            st.warning("⚠️ 아이디를 입력해주세요.")
-        elif forgot_id not in forgot_db:
-            st.error("❌ 존재하지 않는 아이디입니다. 아이디를 다시 확인해주세요.")
-        elif forgot_db[forgot_id].get("status", "ACTIVE") == "SUSPENDED":
-            st.error("🚫 정지된 계정입니다. 관리자에게 문의해주세요.")
-        elif not forgot_new_pw:
-            st.warning("⚠️ 새 비밀번호를 입력해주세요.")
-        elif forgot_new_pw != forgot_new_pw_confirm:
-            st.error("❌ 새 비밀번호 확인이 일치하지 않습니다.")
-        else:
-            is_valid, policy_msg = validate_password_policy(forgot_new_pw)
-            if not is_valid:
-                st.error(f"❌ {policy_msg}")
+        input_id = st.text_input("아이디", key="forgot_pw_id_input").strip()
+
+        target_info = None
+        channel_choice = None
+        if input_id:
+            db = load_user_db()
+            target_info = db.get(input_id)
+            if target_info is None:
+                st.error("❌ 존재하지 않는 아이디입니다.")
+            elif target_info.get("status", "ACTIVE") == "SUSPENDED":
+                st.error("🚫 정지된 계정입니다. 관리자에게 문의해주세요.")
             else:
-                forgot_db[forgot_id]["pw"] = forgot_new_pw
-                log_password_change(forgot_db, forgot_id, "본인(비로그인 재설정)")
-                save_user_db(forgot_db)
-                st.session_state.user_db = forgot_db
-                st.success(f"✅ [{forgot_id}] 계정의 비밀번호가 재설정되었습니다! 이제 새 비밀번호로 로그인해주세요.")
-                time.sleep(1.5)
+                has_email = bool(target_info.get("email"))
+                has_phone = bool(target_info.get("phone"))
+                if not has_email and not has_phone:
+                    st.error("❌ 이 계정에는 등록된 이메일/휴대폰 번호가 없습니다. 관리자에게 문의해주세요.")
+                else:
+                    options = []
+                    if has_email:
+                        options.append(f"📧 이메일 ({mask_email(target_info['email'])})")
+                    if has_phone:
+                        options.append(f"📱 SMS ({mask_phone(target_info['phone'])})")
+                    channel_choice = st.radio("인증 방법 선택", options, key="forgot_pw_channel_radio")
+
+        can_send = bool(input_id and target_info and target_info.get("status", "ACTIVE") != "SUSPENDED" and channel_choice)
+
+        if st.button("📨 인증번호 발송", use_container_width=True, disabled=not can_send):
+            otp = generate_otp_code()
+            st.session_state.pw_reset_target_id = input_id
+            st.session_state.pw_reset_otp_code = otp
+            st.session_state.pw_reset_otp_expiry = time.time() + OTP_EXPIRY_SECONDS
+
+            if channel_choice.startswith("📧"):
+                st.session_state.pw_reset_channel = "EMAIL"
+                sent, msg = send_email_otp(target_info["email"], otp)
+            else:
+                st.session_state.pw_reset_channel = "SMS"
+                sent, msg = send_sms_otp(target_info["phone"], otp)
+
+            if sent:
+                st.success(f"✅ {msg}")
+            else:
+                st.warning(f"⚠️ {msg}")
+                st.info(f"🔧 [데모 모드] 실제 발송 채널이 설정되지 않아 인증번호를 화면에 표시합니다: **{otp}**\n\n(실제 운영 환경에서는 이 안내가 표시되지 않고 이메일/SMS로만 전달됩니다.)")
+
+            st.session_state.pw_reset_step = "otp_verify"
+            time.sleep(0.5)
+            st.rerun()
+
+    # -------------------------------------------------------------
+    # STEP 2: 인증번호 확인
+    # -------------------------------------------------------------
+    elif step == "otp_verify":
+        channel_label = "이메일" if st.session_state.pw_reset_channel == "EMAIL" else "SMS"
+        st.write(f"아이디 **{st.session_state.pw_reset_target_id}** 로 {channel_label} 인증번호를 발송했습니다.")
+
+        remaining = int(st.session_state.pw_reset_otp_expiry - time.time())
+        if remaining > 0:
+            st.caption(f"⏱️ 인증번호 유효시간: 약 {remaining // 60}분 {remaining % 60}초 남음")
+        else:
+            st.error("⏰ 인증번호가 만료되었습니다. 재발송 버튼을 눌러 다시 받아주세요.")
+
+        otp_input = st.text_input("인증번호 6자리 입력", key="forgot_pw_otp_input", max_chars=6).strip()
+
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("✅ 인증번호 확인", use_container_width=True):
+                if not st.session_state.pw_reset_otp_expiry or time.time() > st.session_state.pw_reset_otp_expiry:
+                    st.error("⏰ 인증번호가 만료되었습니다. 다시 발송해주세요.")
+                elif not otp_input:
+                    st.warning("⚠️ 인증번호를 입력해주세요.")
+                elif otp_input != st.session_state.pw_reset_otp_code:
+                    st.error("❌ 인증번호가 일치하지 않습니다.")
+                else:
+                    st.session_state.pw_reset_verified = True
+                    st.session_state.pw_reset_step = "set_new_pw"
+                    st.success("✅ 본인 인증이 완료되었습니다.")
+                    time.sleep(0.7)
+                    st.rerun()
+        with c2:
+            if st.button("🔄 인증번호 재발송", use_container_width=True):
+                db = load_user_db()
+                target_info = db.get(st.session_state.pw_reset_target_id, {})
+                otp = generate_otp_code()
+                st.session_state.pw_reset_otp_code = otp
+                st.session_state.pw_reset_otp_expiry = time.time() + OTP_EXPIRY_SECONDS
+
+                if st.session_state.pw_reset_channel == "EMAIL":
+                    sent, msg = send_email_otp(target_info.get("email", ""), otp)
+                else:
+                    sent, msg = send_sms_otp(target_info.get("phone", ""), otp)
+
+                if sent:
+                    st.success(f"✅ {msg}")
+                else:
+                    st.warning(f"⚠️ {msg}")
+                    st.info(f"🔧 [데모 모드] 인증번호: **{otp}**")
                 st.rerun()
+
+        st.write("")
+        if st.button("⬅️ 처음으로 돌아가기", key="forgot_pw_back_to_id"):
+            _reset_pw_flow_state()
+            st.rerun()
+
+    # -------------------------------------------------------------
+    # STEP 3: 본인 인증 완료 후 새 비밀번호 설정
+    # -------------------------------------------------------------
+    elif step == "set_new_pw":
+        if not st.session_state.pw_reset_verified:
+            st.error("❌ 본인 인증이 완료되지 않았습니다. 처음부터 다시 진행해주세요.")
+            if st.button("⬅️ 처음으로 돌아가기"):
+                _reset_pw_flow_state()
+                st.rerun()
+        else:
+            st.success(f"✅ 본인 인증 완료 (아이디: **{st.session_state.pw_reset_target_id}**)")
+            st.write("---")
+
+            final_new_pw = st.text_input("새 비밀번호", type="password", key="forgot_pw_final_new").strip()
+            final_new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", key="forgot_pw_final_confirm").strip()
+            st.caption(PASSWORD_POLICY_HINT)
+
+            if st.button("💾 비밀번호 재설정 완료", use_container_width=True):
+                if not final_new_pw:
+                    st.warning("⚠️ 새 비밀번호를 입력해주세요.")
+                elif final_new_pw != final_new_pw_confirm:
+                    st.error("❌ 새 비밀번호 확인이 일치하지 않습니다.")
+                else:
+                    is_valid, policy_msg = validate_password_policy(final_new_pw)
+                    if not is_valid:
+                        st.error(f"❌ {policy_msg}")
+                    else:
+                        db = load_user_db()
+                        uid = st.session_state.pw_reset_target_id
+                        if uid not in db:
+                            st.error("❌ 계정 정보를 찾을 수 없습니다.")
+                        else:
+                            db[uid]["pw"] = final_new_pw
+                            channel_label = "이메일" if st.session_state.pw_reset_channel == "EMAIL" else "SMS"
+                            log_password_change(db, uid, f"본인({channel_label} 인증 재설정)")
+                            save_user_db(db)
+                            st.session_state.user_db = db
+                            st.success(f"✅ [{uid}] 계정의 비밀번호가 재설정되었습니다! 이제 새 비밀번호로 로그인해주세요.")
+                            _reset_pw_flow_state()
+                            time.sleep(1.5)
+                            st.rerun()
 
 # AI 뉴스 요약 모달 창
 @st.dialog("🎯 AI 요약 브리핑")
@@ -899,15 +1173,40 @@ elif st.session_state.menu_idx == 4:
                 admin_db_status = load_user_db()
                 status_user_list = list(admin_db_status.keys())
                 status_target_id = st.selectbox("대상 계정 선택 (아이디)", status_user_list, key="admin_status_target_select")
+                target_info = admin_db_status.get(status_target_id, {})
+
+                st.write(f"권한: **{target_info.get('role', '알수없음')}**")
+                current_email = target_info.get("email") or ""
+                current_phone = target_info.get("phone") or ""
+                st.write(f"등록된 이메일: **{current_email if current_email else '없음 (본인 인증 재설정 불가)'}**")
+                st.write(f"등록된 휴대폰: **{current_phone if current_phone else '없음'}**")
+
+                # ---- 이메일/휴대폰 등록·수정 (본인 인증 재설정에 사용됨) ----
+                with st.expander("✏️ 이메일 / 휴대폰 번호 등록·수정", expanded=(not current_email)):
+                    st.caption("여기서 등록한 이메일/휴대폰 번호는 '비밀번호 재설정(OTP 인증)' 기능에 사용됩니다.")
+                    new_email_input = st.text_input("이메일", value=current_email, key=f"admin_edit_email_{status_target_id}").strip()
+                    new_phone_input = st.text_input("휴대폰 번호", value=current_phone, key=f"admin_edit_phone_{status_target_id}").strip()
+                    if st.button("💾 연락처 정보 저장", key=f"admin_save_contact_{status_target_id}"):
+                        EMAIL_REGEX = r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+                        if new_email_input and not re.match(EMAIL_REGEX, new_email_input):
+                            st.error("❌ 올바른 이메일 형식이 아닙니다. (예: name@example.com)")
+                        else:
+                            fresh_db = load_user_db()
+                            fresh_db[status_target_id]["email"] = new_email_input if new_email_input else None
+                            fresh_db[status_target_id]["phone"] = new_phone_input if new_phone_input else None
+                            save_user_db(fresh_db)
+                            st.session_state.user_db = fresh_db
+                            st.success(f"✅ [{status_target_id}] 계정의 연락처 정보가 저장되었습니다.")
+                            st.rerun()
+
+                st.write("---")
 
                 if status_target_id == current_user:
                     st.info("ℹ️ 본인 계정은 이 패널에서 정지하거나 삭제할 수 없습니다. 다른 관리자에게 요청해주세요.")
                 else:
-                    target_info = admin_db_status.get(status_target_id, {})
                     current_status = target_info.get("status", "ACTIVE")
                     status_label = "🟢 활성 (ACTIVE)" if current_status == "ACTIVE" else "🔴 정지 (SUSPENDED)"
                     st.write(f"현재 상태: **{status_label}**")
-                    st.write(f"권한: **{target_info.get('role', '알수없음')}**")
                     st.write(f"마지막 비밀번호 변경: **{target_info.get('pw_last_changed', '기록 없음')}**")
 
                     # 비밀번호 변경 이력 표시
