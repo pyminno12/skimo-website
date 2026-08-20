@@ -567,9 +567,12 @@ T = LOCALIZED_TEXT.get(st.session_state.current_lang_code, LOCALIZED_TEXT["EN"])
 def auth_dialog():
     tab1, tab2 = st.tabs(["👤 로그인", "📝 회원가입"])
     with tab1:
-        login_id = st.text_input("아이디", key="login_id").strip()
-        login_pw = st.text_input("비밀번호", type="password", key="login_pw").strip()
-        if st.button("로그인 완료", use_container_width=True):
+        with st.form("login_form", clear_on_submit=False):
+            login_id = st.text_input("아이디", key="login_id").strip()
+            login_pw = st.text_input("비밀번호", type="password", key="login_pw").strip()
+            login_submitted = st.form_submit_button("로그인 완료", use_container_width=True)
+
+        if login_submitted:
             current_db = load_user_db()
             if login_id in current_db and current_db[login_id]["pw"] == login_pw:
                 if current_db[login_id].get("status", "ACTIVE") == "SUSPENDED":
@@ -583,16 +586,18 @@ def auth_dialog():
             else:
                 st.error("❌ 아이디 또는 비밀번호가 일치하지 않습니다.")
     with tab2:
-        reg_id = st.text_input("새로운 아이디 생성", key="reg_id").strip()
-        reg_pw = st.text_input("새로운 비밀번호 설정", type="password", key="reg_pw").strip()
-        reg_pw_confirm = st.text_input("비밀번호 확인", type="password", key="reg_pw_confirm").strip()
-        st.caption(PASSWORD_POLICY_HINT)
-        st.write("---")
-        reg_email = st.text_input("이메일 (비밀번호 재설정용, 필수)", key="reg_email").strip()
-        reg_phone = st.text_input("휴대폰 번호 (선택, 예: 010-1234-5678)", key="reg_phone").strip()
-        st.caption("📧 이메일은 비밀번호를 잊었을 때 본인 인증(인증번호 발송)을 위해 사용됩니다.")
+        with st.form("signup_form", clear_on_submit=False):
+            reg_id = st.text_input("새로운 아이디 생성", key="reg_id").strip()
+            reg_pw = st.text_input("새로운 비밀번호 설정", type="password", key="reg_pw").strip()
+            reg_pw_confirm = st.text_input("비밀번호 확인", type="password", key="reg_pw_confirm").strip()
+            st.caption(PASSWORD_POLICY_HINT)
+            st.write("---")
+            reg_email = st.text_input("이메일 (비밀번호 재설정용, 필수)", key="reg_email").strip()
+            reg_phone = st.text_input("휴대폰 번호 (선택, 예: 010-1234-5678)", key="reg_phone").strip()
+            st.caption("📧 이메일은 비밀번호를 잊었을 때 본인 인증(인증번호 발송)을 위해 사용됩니다.")
+            signup_submitted = st.form_submit_button("회원가입 신청", use_container_width=True)
 
-        if st.button("회원가입 신청", use_container_width=True):
+        if signup_submitted:
             current_db = load_user_db()
             EMAIL_REGEX = r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
             if not reg_id or not reg_pw:
@@ -636,12 +641,14 @@ def change_password_dialog():
     tab_pw, tab_contact = st.tabs(["🔒 비밀번호 변경", "📧 연락처 정보"])
 
     with tab_pw:
-        cur_pw = st.text_input("현재 비밀번호", type="password", key="pw_change_current").strip()
-        new_pw = st.text_input("새 비밀번호", type="password", key="pw_change_new").strip()
-        new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", key="pw_change_confirm").strip()
-        st.caption(PASSWORD_POLICY_HINT)
+        with st.form("change_pw_form", clear_on_submit=False):
+            cur_pw = st.text_input("현재 비밀번호", type="password", key="pw_change_current").strip()
+            new_pw = st.text_input("새 비밀번호", type="password", key="pw_change_new").strip()
+            new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", key="pw_change_confirm").strip()
+            st.caption(PASSWORD_POLICY_HINT)
+            pw_submitted = st.form_submit_button("💾 비밀번호 변경하기", use_container_width=True)
 
-        if st.button("💾 비밀번호 변경하기", use_container_width=True):
+        if pw_submitted:
             current_db = load_user_db()
 
             if current_user not in current_db:
@@ -675,10 +682,12 @@ def change_password_dialog():
         my_email = my_info.get("email") or ""
         my_phone = my_info.get("phone") or ""
 
-        new_email = st.text_input("이메일", value=my_email, key="my_contact_email").strip()
-        new_phone = st.text_input("휴대폰 번호", value=my_phone, key="my_contact_phone").strip()
+        with st.form("change_contact_form", clear_on_submit=False):
+            new_email = st.text_input("이메일", value=my_email, key="my_contact_email").strip()
+            new_phone = st.text_input("휴대폰 번호", value=my_phone, key="my_contact_phone").strip()
+            contact_submitted = st.form_submit_button("💾 연락처 정보 저장", use_container_width=True)
 
-        if st.button("💾 연락처 정보 저장", use_container_width=True, key="my_contact_save_btn"):
+        if contact_submitted:
             EMAIL_REGEX = r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
             if new_email and not re.match(EMAIL_REGEX, new_email):
                 st.error("❌ 올바른 이메일 형식이 아닙니다. (예: name@example.com)")
@@ -840,11 +849,13 @@ def forgot_password_dialog():
             st.success(f"✅ 본인 인증 완료 (아이디: **{st.session_state.pw_reset_target_id}**)")
             st.write("---")
 
-            final_new_pw = st.text_input("새 비밀번호", type="password", key="forgot_pw_final_new").strip()
-            final_new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", key="forgot_pw_final_confirm").strip()
-            st.caption(PASSWORD_POLICY_HINT)
+            with st.form("forgot_pw_final_form", clear_on_submit=False):
+                final_new_pw = st.text_input("새 비밀번호", type="password", key="forgot_pw_final_new").strip()
+                final_new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", key="forgot_pw_final_confirm").strip()
+                st.caption(PASSWORD_POLICY_HINT)
+                final_submitted = st.form_submit_button("💾 비밀번호 재설정 완료", use_container_width=True)
 
-            if st.button("💾 비밀번호 재설정 완료", use_container_width=True):
+            if final_submitted:
                 if not final_new_pw:
                     st.warning("⚠️ 새 비밀번호를 입력해주세요.")
                 elif final_new_pw != final_new_pw_confirm:
@@ -1243,10 +1254,13 @@ elif st.session_state.menu_idx == 4:
                             st.code(temp_pw, language=None)
                             st.warning("⚠️ 이 임시 비밀번호를 해당 사용자에게 안전한 채널로 전달하고, 로그인 후 즉시 변경하도록 안내하세요. 이 화면을 벗어나면 다시 확인할 수 없습니다.")
                 else:
-                    admin_new_pw = st.text_input("새 비밀번호 지정", type="password", key="admin_new_pw_input").strip()
-                    admin_new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", key="admin_new_pw_confirm_input").strip()
-                    st.caption(PASSWORD_POLICY_HINT)
-                    if st.button("💾 비밀번호 직접 변경하기", key="admin_direct_reset_btn"):
+                    with st.form("admin_direct_reset_form", clear_on_submit=False):
+                        admin_new_pw = st.text_input("새 비밀번호 지정", type="password", key="admin_new_pw_input").strip()
+                        admin_new_pw_confirm = st.text_input("새 비밀번호 확인", type="password", key="admin_new_pw_confirm_input").strip()
+                        st.caption(PASSWORD_POLICY_HINT)
+                        admin_direct_submitted = st.form_submit_button("💾 비밀번호 직접 변경하기")
+
+                    if admin_direct_submitted:
                         admin_db_fresh = load_user_db()
                         if target_user_id not in admin_db_fresh:
                             st.error("❌ 대상 계정을 찾을 수 없습니다.")
@@ -1287,9 +1301,12 @@ elif st.session_state.menu_idx == 4:
                 # ---- 이메일/휴대폰 등록·수정 (본인 인증 재설정에 사용됨) ----
                 with st.expander("✏️ 이메일 / 휴대폰 번호 등록·수정", expanded=(not current_email)):
                     st.caption("여기서 등록한 이메일/휴대폰 번호는 '비밀번호 재설정(OTP 인증)' 기능에 사용됩니다.")
-                    new_email_input = st.text_input("이메일", value=current_email, key=f"admin_edit_email_{status_target_id}").strip()
-                    new_phone_input = st.text_input("휴대폰 번호", value=current_phone, key=f"admin_edit_phone_{status_target_id}").strip()
-                    if st.button("💾 연락처 정보 저장", key=f"admin_save_contact_{status_target_id}"):
+                    with st.form(f"admin_contact_form_{status_target_id}", clear_on_submit=False):
+                        new_email_input = st.text_input("이메일", value=current_email, key=f"admin_edit_email_{status_target_id}").strip()
+                        new_phone_input = st.text_input("휴대폰 번호", value=current_phone, key=f"admin_edit_phone_{status_target_id}").strip()
+                        admin_contact_submitted = st.form_submit_button("💾 연락처 정보 저장")
+
+                    if admin_contact_submitted:
                         EMAIL_REGEX = r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
                         if new_email_input and not re.match(EMAIL_REGEX, new_email_input):
                             st.error("❌ 올바른 이메일 형식이 아닙니다. (예: name@example.com)")
