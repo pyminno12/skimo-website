@@ -7,6 +7,7 @@ import json
 import re
 import secrets
 import string
+from sqlalchemy import text
 
 # ==========================================
 # 1. 페이지 설정 및 글로벌 상태 정의
@@ -30,6 +31,42 @@ if "logged_in_user" not in st.session_state:
 
 # [브라우저 쿠키/로컬 스토리지 대용 구조]
 DB_FILE = "user_database.json"
+DB_TABLE_NAME = "skimo_users"
+
+# ==========================================
+# [신규 추가] 영구 데이터베이스 연결 (회원 정보 유실 방지)
+# ------------------------------------------
+# 문제: Streamlit Cloud 등 대부분의 무료 클라우드 호스팅은 로컬 디스크가
+#       "임시(ephemeral)" 저장소라서, 앱이 재시작/재배포되면 로컬 파일이
+#       초기화되어 user_database.json에 저장된 회원 정보가 사라집니다.
+# 해결: secrets.toml에 [connections.skimo_db] 설정(Postgres 등 외부 DB 접속 정보)이
+#       있으면 그 DB에 영구 저장하고, 설정이 없으면 기존처럼 로컬 JSON 파일을
+#       사용합니다(로컬 개발용 폴백 - 이 경우 여전히 배포 환경에서는 유실될 수 있음).
+# ==========================================
+@st.cache_resource
+def get_db_connection():
+    """
+    secrets.toml에 [connections.skimo_db] 설정이 있으면 SQL(Postgres 등) 연결을 반환하고,
+    설정이 없거나 연결에 실패하면 None을 반환합니다(로컬 JSON 폴백 모드로 전환).
+    """
+    try:
+        if "connections" in st.secrets and "skimo_db" in st.secrets["connections"]:
+            conn = st.connection("skimo_db", type="sql")
+            with conn.session as s:
+                s.execute(text(f"""
+                    CREATE TABLE IF NOT EXISTS {DB_TABLE_NAME} (
+                        user_id TEXT PRIMARY KEY,
+                        data TEXT NOT NULL
+                    )
+                """))
+                s.commit()
+            return conn
+    except Exception as e:
+        st.warning(f"⚠️ 영구 DB 연결에 실패해 로컬 저장 모드로 전환합니다: {e}")
+    return None
+
+DB_CONN = get_db_connection()
+USING_PERSISTENT_DB = DB_CONN is not None
 
 def ensure_user_meta_fields(db_data: dict) -> dict:
     """
@@ -62,31 +99,68 @@ def ensure_user_meta_fields(db_data: dict) -> dict:
         save_user_db(db_data)
     return db_data
 
+def _build_initial_db() -> dict:
+    now_iso = datetime.now().isoformat(timespec="seconds")
+    return {
+        "admin": {
+            "pw": "1234", "role": "ADMIN", "status": "ACTIVE",
+            "pw_last_changed": now_iso,
+            "pw_history": [{"timestamp": now_iso, "changed_by": "시스템(초기 생성)"}],
+            "email": None, "phone": None
+        },
+        "skimo": {
+            "pw": "skimo123", "role": "JUDGE", "status": "ACTIVE",
+            "pw_last_changed": now_iso,
+            "pw_history": [{"timestamp": now_iso, "changed_by": "시스템(초기 생성)"}],
+            "email": None, "phone": None
+        }
+    }
+
 def load_user_db():
+    # ---------- 1) 영구 DB가 연결되어 있는 경우 ----------
+    if DB_CONN is not None:
+        try:
+            with DB_CONN.session as s:
+                rows = s.execute(text(f"SELECT user_id, data FROM {DB_TABLE_NAME}")).fetchall()
+            if rows:
+                db_data = {row[0]: json.loads(row[1]) for row in rows}
+                return ensure_user_meta_fields(db_data)
+            else:
+                # DB가 비어있으면(최초 실행) 기본 계정을 생성해 DB에 저장
+                initial_db = _build_initial_db()
+                save_user_db(initial_db)
+                return initial_db
+        except Exception as e:
+            st.error(f"❌ DB 조회 중 오류가 발생했습니다: {e}")
+            return _build_initial_db()
+
+    # ---------- 2) 영구 DB 미설정 → 로컬 JSON 파일 폴백 ----------
     try:
         with open(DB_FILE, "r", encoding="utf-8") as f:
             db_data = json.load(f)
         return ensure_user_meta_fields(db_data)
     except FileNotFoundError:
-        now_iso = datetime.now().isoformat(timespec="seconds")
-        initial_db = {
-            "admin": {
-                "pw": "1234", "role": "ADMIN", "status": "ACTIVE",
-                "pw_last_changed": now_iso,
-                "pw_history": [{"timestamp": now_iso, "changed_by": "시스템(초기 생성)"}],
-                "email": None, "phone": None
-            },
-            "skimo": {
-                "pw": "skimo123", "role": "JUDGE", "status": "ACTIVE",
-                "pw_last_changed": now_iso,
-                "pw_history": [{"timestamp": now_iso, "changed_by": "시스템(초기 생성)"}],
-                "email": None, "phone": None
-            }
-        }
+        initial_db = _build_initial_db()
         save_user_db(initial_db)
         return initial_db
 
 def save_user_db(db_data):
+    # ---------- 1) 영구 DB가 연결되어 있는 경우: DB에 저장 ----------
+    if DB_CONN is not None:
+        try:
+            with DB_CONN.session as s:
+                s.execute(text(f"DELETE FROM {DB_TABLE_NAME}"))
+                for uid, info in db_data.items():
+                    s.execute(
+                        text(f"INSERT INTO {DB_TABLE_NAME} (user_id, data) VALUES (:uid, :data)"),
+                        {"uid": uid, "data": json.dumps(info, ensure_ascii=False)}
+                    )
+                s.commit()
+            return
+        except Exception as e:
+            st.error(f"❌ DB 저장 중 오류가 발생했습니다: {e}")
+            # DB 저장 실패 시에도 최소한 로컬 파일에는 백업 저장 시도
+    # ---------- 2) 영구 DB 미설정(또는 저장 실패) → 로컬 JSON 파일에 저장 ----------
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(db_data, f, ensure_ascii=False, indent=4)
 
@@ -1075,6 +1149,12 @@ elif st.session_state.menu_idx == 4:
         st.info("테스트용 심판 계정: `skimo` / `skimo123`  |  관리자 계정: `admin` / `1234`로 상단에서 로그인하세요.")
     else:
         st.success(f"🔑 현장 심판/관리자 전용 제어판에 접속하셨습니다. (접속자: **{current_user}**)")
+
+        if USING_PERSISTENT_DB:
+            st.info("💾 회원 데이터 저장 방식: **영구 DB 연결됨** — 앱이 재시작/재배포되어도 회원 정보가 유지됩니다.")
+        else:
+            st.warning("⚠️ 회원 데이터 저장 방식: **로컬 파일 모드** — 배포 환경에 따라 앱 재시작 시 회원 정보가 유실될 수 있습니다. `secrets.toml`에 `[connections.skimo_db]`를 설정해 영구 DB를 연결하는 것을 권장합니다.")
+
         st.markdown("---")
         
         target_bib = st.selectbox("선수 선택 (배번호)", list(st.session_state.athletes_domain.keys()))
