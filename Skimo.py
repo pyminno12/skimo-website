@@ -47,25 +47,27 @@ DB_TABLE_NAME = "skimo_users"
 def get_db_connection():
     """
     secrets.toml에 [connections.skimo_db] 설정이 있으면 SQL(Postgres 등) 연결을 반환하고,
-    설정이 없거나 연결에 실패하면 None을 반환합니다(로컬 JSON 폴백 모드로 전환).
+    설정이 없거나 연결에 실패하면 (None, 실패사유)를 반환합니다(로컬 JSON 폴백 모드로 전환).
+    결과 전체가 캐싱되므로 재실행 없이도(캐시 히트 시에도) 실패 사유가 유지됩니다.
     """
     try:
-        if "connections" in st.secrets and "skimo_db" in st.secrets["connections"]:
-            conn = st.connection("skimo_db", type="sql")
-            with conn.session as s:
-                s.execute(text(f"""
-                    CREATE TABLE IF NOT EXISTS {DB_TABLE_NAME} (
-                        user_id TEXT PRIMARY KEY,
-                        data TEXT NOT NULL
-                    )
-                """))
-                s.commit()
-            return conn
-    except Exception as e:
-        st.warning(f"⚠️ 영구 DB 연결에 실패해 로컬 저장 모드로 전환합니다: {e}")
-    return None
+        if "connections" not in st.secrets or "skimo_db" not in st.secrets["connections"]:
+            return None, "secrets.toml(또는 Streamlit Cloud Secrets)에 [connections.skimo_db] 설정 자체가 없습니다."
 
-DB_CONN = get_db_connection()
+        conn = st.connection("skimo_db", type="sql")
+        with conn.session as s:
+            s.execute(text(f"""
+                CREATE TABLE IF NOT EXISTS {DB_TABLE_NAME} (
+                    user_id TEXT PRIMARY KEY,
+                    data TEXT NOT NULL
+                )
+            """))
+            s.commit()
+        return conn, None
+    except Exception as e:
+        return None, f"{type(e).__name__}: {e}"
+
+DB_CONN, DB_CONNECTION_ERROR_MSG = get_db_connection()
 USING_PERSISTENT_DB = DB_CONN is not None
 
 def ensure_user_meta_fields(db_data: dict) -> dict:
@@ -123,7 +125,17 @@ def load_user_db():
             with DB_CONN.session as s:
                 rows = s.execute(text(f"SELECT user_id, data FROM {DB_TABLE_NAME}")).fetchall()
             if rows:
-                db_data = {row[0]: json.loads(row[1]) for row in rows}
+                db_data = {}
+                for row in rows:
+                    try:
+                        db_data[row[0]] = json.loads(row[1])
+                    except (json.JSONDecodeError, TypeError):
+                        # 개별 계정 데이터가 손상된 경우 해당 계정만 건너뜁니다.
+                        continue
+                if not db_data:
+                    initial_db = _build_initial_db()
+                    save_user_db(initial_db)
+                    return initial_db
                 return ensure_user_meta_fields(db_data)
             else:
                 # DB가 비어있으면(최초 실행) 기본 계정을 생성해 DB에 저장
@@ -137,9 +149,15 @@ def load_user_db():
     # ---------- 2) 영구 DB 미설정 → 로컬 JSON 파일 폴백 ----------
     try:
         with open(DB_FILE, "r", encoding="utf-8") as f:
-            db_data = json.load(f)
+            raw_content = f.read().strip()
+        if not raw_content:
+            # 파일은 존재하지만 내용이 비어있는 경우 (손상된 파일)
+            raise json.JSONDecodeError("empty file", raw_content, 0)
+        db_data = json.loads(raw_content)
         return ensure_user_meta_fields(db_data)
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
+        # 파일이 없거나(FileNotFoundError), 있어도 비어있거나 손상된 경우(JSONDecodeError)
+        # 모두 기본 계정으로 새로 초기화합니다.
         initial_db = _build_initial_db()
         save_user_db(initial_db)
         return initial_db
@@ -1154,6 +1172,11 @@ elif st.session_state.menu_idx == 4:
             st.info("💾 회원 데이터 저장 방식: **영구 DB 연결됨** — 앱이 재시작/재배포되어도 회원 정보가 유지됩니다.")
         else:
             st.warning("⚠️ 회원 데이터 저장 방식: **로컬 파일 모드** — 배포 환경에 따라 앱 재시작 시 회원 정보가 유실될 수 있습니다. `secrets.toml`에 `[connections.skimo_db]`를 설정해 영구 DB를 연결하는 것을 권장합니다.")
+            if DB_CONNECTION_ERROR_MSG:
+                st.error(f"🔍 연결 실패 원인: `{DB_CONNECTION_ERROR_MSG}`")
+                if st.button("🔄 DB 연결 다시 시도", key="retry_db_conn_btn"):
+                    get_db_connection.clear()
+                    st.rerun()
 
         st.markdown("---")
         
