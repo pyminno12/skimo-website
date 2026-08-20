@@ -715,6 +715,8 @@ def _reset_pw_flow_state():
     st.session_state.pw_reset_otp_expiry = None
     st.session_state.pw_reset_channel = None
     st.session_state.pw_reset_verified = False
+    st.session_state.pw_reset_send_result = None
+    st.session_state.pw_reset_verified_message = None
 
 @st.dialog("🔑 비밀번호 재설정")
 def forgot_password_dialog():
@@ -771,14 +773,12 @@ def forgot_password_dialog():
                 st.session_state.pw_reset_channel = "SMS"
                 sent, msg = send_sms_otp(target_info["phone"], otp)
 
-            if sent:
-                st.success(f"✅ {msg}")
-            else:
-                st.warning(f"⚠️ {msg}")
-                st.info(f"🔧 [데모 모드] 실제 발송 채널이 설정되지 않아 인증번호를 화면에 표시합니다: **{otp}**\n\n(실제 운영 환경에서는 이 안내가 표시되지 않고 이메일/SMS로만 전달됩니다.)")
+            # 발송 결과는 여기서 바로 표시하지 않고 세션에 저장합니다.
+            # (바로 다음 줄에서 화면을 전환(rerun)하기 때문에, 여기서 표시하면
+            #  전환 직전 아주 짧은 순간만 보이고 사라져버립니다.)
+            st.session_state.pw_reset_send_result = {"sent": sent, "msg": msg, "otp": otp}
 
             st.session_state.pw_reset_step = "otp_verify"
-            time.sleep(0.5)
             st.rerun()
 
     # -------------------------------------------------------------
@@ -787,6 +787,22 @@ def forgot_password_dialog():
     elif step == "otp_verify":
         channel_label = "이메일" if st.session_state.pw_reset_channel == "EMAIL" else "SMS"
         st.write(f"아이디 **{st.session_state.pw_reset_target_id}** 로 {channel_label} 인증번호를 발송했습니다.")
+
+        # 발송/재발송 직후 저장해둔 결과를 여기서 지속적으로 표시합니다.
+        # (STEP 1에서 바로 표시하면 화면 전환과 함께 순식간에 사라지는 문제가 있어
+        #  결과를 세션에 저장해뒀다가 이 화면에서 계속 보여주는 방식으로 변경했습니다.)
+        send_result = st.session_state.get("pw_reset_send_result")
+        if send_result:
+            if send_result["sent"]:
+                st.success(f"✅ {send_result['msg']}")
+            else:
+                st.warning(f"⚠️ {send_result['msg']}")
+                st.info(
+                    f"🔧 [데모 모드] 실제 발송 채널이 설정되지 않아 인증번호를 화면에 표시합니다: "
+                    f"**{send_result['otp']}**\n\n"
+                    f"(실제 운영 환경에서는 이 안내가 표시되지 않고 이메일/SMS로만 전달됩니다. "
+                    f"아래 '인증번호 6자리 입력'란에 이 번호를 그대로 입력해주세요.)"
+                )
 
         remaining = int(st.session_state.pw_reset_otp_expiry - time.time())
         if remaining > 0:
@@ -807,9 +823,8 @@ def forgot_password_dialog():
                     st.error("❌ 인증번호가 일치하지 않습니다.")
                 else:
                     st.session_state.pw_reset_verified = True
+                    st.session_state.pw_reset_verified_message = "✅ 본인 인증이 완료되었습니다."
                     st.session_state.pw_reset_step = "set_new_pw"
-                    st.success("✅ 본인 인증이 완료되었습니다.")
-                    time.sleep(0.7)
                     st.rerun()
         with c2:
             if st.button("🔄 인증번호 재발송", use_container_width=True):
@@ -824,11 +839,8 @@ def forgot_password_dialog():
                 else:
                     sent, msg = send_sms_otp(target_info.get("phone", ""), otp)
 
-                if sent:
-                    st.success(f"✅ {msg}")
-                else:
-                    st.warning(f"⚠️ {msg}")
-                    st.info(f"🔧 [데모 모드] 인증번호: **{otp}**")
+                # 재발송 결과도 동일하게 세션에 저장 후 rerun 시 위쪽 안내 영역에서 표시됩니다.
+                st.session_state.pw_reset_send_result = {"sent": sent, "msg": msg, "otp": otp}
                 st.rerun()
 
         st.write("")
